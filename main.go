@@ -6,7 +6,8 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
-//	"sync/atomic"
+	"sync/atomic"
+	"math/rand"
 )
 
 type Order struct {
@@ -17,16 +18,17 @@ type Order struct {
 	DecayRate float32
 }
 
-func courier(order Order, shelf string,
-		counter *uint, arrival_time uint,
+func courier(order Order,
+		counter *int32, arrival_time int,
 		modifier uint){
-	// we'll want a pointer to the shelf as well
-	// as the incrementer
+	// TODO: add proper logging for fetching,
+	// displaying shelf contents after fetch.
 	time.Sleep(time.Duration(1000*arrival_time)*time.Millisecond)
 	a := float32(order.ShelfLife)
 	b := order.DecayRate*float32(arrival_time) * float32(modifier)
 	value := (a - b)/a
 	// remove item from shelf in either scenario
+	atomic.AddInt32(counter,1)
 	// need to log the score in either scenario
 	if (value <= 0){
 		fmt.Println("Discarded item due to expiration")
@@ -35,39 +37,34 @@ func courier(order Order, shelf string,
 	}
 }
 
-func selectShelf(order *Order,over_ct int,
-		cold_ct int,
-		hot_ct int, frozen_ct int) int{
+func selectShelf(order *Order,over_ct *int32,
+		cold_ct *int32,
+		hot_ct *int32, frozen_ct *int32,
+		dead *int32) *int32{
+	// TODO: add in moving average selection here
+	// TODO: make this return an enum instead of a number
 
-	available := []string{}
-	if (over_ct > 0){
-		available := append(available,"overflow")
+	if (*over_ct > 0){
+		return over_ct
 	}
-	if (cold_ct > 0 && order.Temp == "cold"){
-		available := append(available,"cold")
-	} else if (hot_ct > 0 && order.Temp == "hot"){
-		available := append(available,"hot")
-
-	} else if (frozen_ct > 0 && order.Temp == "frozen"){
-		available := append(available,"frozen")
-
+	if (*cold_ct > 0 && order.Temp == "cold"){
+		return cold_ct
+	} else if (*hot_ct > 0 && order.Temp == "hot"){
+		return hot_ct
+	} else if (*frozen_ct > 0 && order.Temp == "frozen"){
+		return frozen_ct
 	} else {
+		fmt.Println(order)
 		panic("unknown temp")
 	}
-	if (len(available) == 0){
-		return 0
-	}
-	return 1
-	//switch available[0]{
-	//	case "overflow":
-	//		return 1
-	//	case "hot":
-	//		return 2
-	//	case "frozen":
-	//		return 3
-	//	default:
-	//		return 0
-	//}
+	return dead
+}
+
+func decrement(ct *int32){
+	// TODO: add in a pointer to the array
+	// so we can store the ID
+	atomic.AddInt32(ct,-1)
+
 }
 // TODO: add in parameters for CLI options
 func runQueue(){
@@ -86,12 +83,51 @@ func runQueue(){
 	json.Unmarshal(byteArray, &orders)
 	arrlen := len(orders)
 	fmt.Printf("array length is %d\n", arrlen)
-	over_ct,cold_ct,hot_ct,frozen_ct := 15,10,10,10
+	over_ct,cold_ct,hot_ct,frozen_ct,dead := int32(15),int32(10),int32(10),int32(10),int32(0)
 	for i:= 1; i < arrlen; i += 2 {
 		fmt.Println(orders[i],i)
 		fmt.Println(orders[i-1],i-1)
-		
+		blob_1,blob_2 := orders[i],orders[i-1]
+		// TODO: add stuff for shelf contents
+		shelf_1 := selectShelf(&blob_1, &over_ct,
+				&cold_ct,&hot_ct,&frozen_ct,
+				&dead)
+		if (shelf_1 != &dead){
+			decrement(shelf_1)
+		}
+		shelf_2 := selectShelf(&blob_2, &over_ct,
+				&cold_ct,&hot_ct,&frozen_ct,
+				&dead)
+		if (shelf_2 != &dead){
+			decrement(shelf_2)
+		}
+		arrival_1 := rand.Intn(6-2)+2
+		arrival_2 := rand.Intn(6-2)+2
+		// TODO: Add logging for dispatch
+		if (shelf_1 != &dead){
+			if (shelf_1 == &over_ct){
+				go courier(blob_1, &over_ct,
+				arrival_1, 2)
+			} else {
+				go courier(blob_1, shelf_1,
+					arrival_1,1)
+			}
+		}
+		if (shelf_2 != &dead){
+			if (shelf_2 == &over_ct){
+				go courier(blob_2, &over_ct,
+				arrival_2, 2)
+			} else {
+				go courier(blob_2, shelf_2,
+					arrival_2,1)
+			}
+		}
+		time.Sleep(2000*time.Millisecond)
 	}
+	// we need to use a wait group as opposed to this
+	// short term hack to ensure all goroutines 
+	// are completed
+	time.Sleep(10000*time.Millisecond)
 }
 
 func main(){
