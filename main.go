@@ -42,6 +42,7 @@ func courier(order Order,
 	}
 }
 
+// TODO: add in a return value pointer for the shelf itself. This is sloppy
 func selectShelf(order *Order,over_ct *int32,
 		cold_ct *int32,
 		hot_ct *int32, frozen_ct *int32,
