@@ -57,7 +57,7 @@ func buildShelf(array_capacity uint, name string,
 	}
 	return shelf
 }
-func (s Shelf) decrementAndUpdate(id string) int {
+func (s *Shelf) decrementAndUpdate(id string) int {
 	atomic.AddInt32(&s.counter, -1);
 	// TODO: make this smarter based on the counter value
 	for i := 0; i < len(s.item_array); i++ {
