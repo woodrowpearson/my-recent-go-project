@@ -22,6 +22,9 @@ type Order struct {
 func courier(order Order,
 		counter *int32, arrival_time int,
 		modifier uint, wg *sync.WaitGroup, shelf []string,target_idx int){
+	// NOTE: slices are reference types, and due to the specifics of the problem,
+	// we cannot have a scenario where two coroutines are attempting to access
+	// the same location at the same time.
 	time.Sleep(time.Duration(1000*arrival_time)*time.Millisecond)
 	a := float32(order.ShelfLife)
 	b := order.DecayRate*float32(arrival_time) * float32(modifier)
@@ -112,7 +115,6 @@ func runQueue(){
 		hot[i] = "";
 		frozen[i] = "";
 	}
-	fmt.Println(overflow)
 	for i:= 1; i < arrlen; i += 2 {
 		blob_1,blob_2 := orders[i],orders[i-1]
 		// TODO: add stuff for shelf contents
