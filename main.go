@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
+	"sync"
 	"sync/atomic"
 	"math/rand"
 )
@@ -20,9 +21,10 @@ type Order struct {
 
 func courier(order Order,
 		counter *int32, arrival_time int,
-		modifier uint){
+		modifier uint, wg *sync.WaitGroup){
 	// TODO: add proper logging for fetching,
 	// displaying shelf contents after fetch.
+	// TODO: add pointer for the array so we can remove it
 	time.Sleep(time.Duration(1000*arrival_time)*time.Millisecond)
 	a := float32(order.ShelfLife)
 	b := order.DecayRate*float32(arrival_time) * float32(modifier)
@@ -30,6 +32,7 @@ func courier(order Order,
 	// remove item from shelf in either scenario
 	atomic.AddInt32(counter,1)
 	// need to log the score in either scenario
+	wg.Done()
 	if (value <= 0){
 		fmt.Println("Discarded item due to expiration")
 	} else {
@@ -82,7 +85,8 @@ func runQueue(){
 	}
 	json.Unmarshal(byteArray, &orders)
 	arrlen := len(orders)
-	fmt.Printf("array length is %d\n", arrlen)
+
+	var wg  sync.WaitGroup
 	over_ct,cold_ct,hot_ct,frozen_ct,dead := int32(15),int32(10),int32(10),int32(10),int32(0)
 	for i:= 1; i < arrlen; i += 2 {
 		fmt.Println(orders[i],i)
@@ -105,29 +109,29 @@ func runQueue(){
 		arrival_2 := rand.Intn(6-2)+2
 		// TODO: Add logging for dispatch
 		if (shelf_1 != &dead){
+			wg.Add(1)
 			if (shelf_1 == &over_ct){
 				go courier(blob_1, &over_ct,
-				arrival_1, 2)
+				arrival_1, 2, &wg)
 			} else {
 				go courier(blob_1, shelf_1,
-					arrival_1,1)
+					arrival_1,1,&wg)
 			}
 		}
 		if (shelf_2 != &dead){
+			wg.Add(1)
 			if (shelf_2 == &over_ct){
 				go courier(blob_2, &over_ct,
-				arrival_2, 2)
+				arrival_2, 2,&wg)
 			} else {
 				go courier(blob_2, shelf_2,
-					arrival_2,1)
+					arrival_2,1,&wg)
 			}
 		}
 		time.Sleep(2000*time.Millisecond)
 	}
-	// we need to use a wait group as opposed to this
-	// short term hack to ensure all goroutines 
-	// are completed
-	time.Sleep(10000*time.Millisecond)
+	wg.Wait()
+	fmt.Println("complete")
 }
 
 func main(){
