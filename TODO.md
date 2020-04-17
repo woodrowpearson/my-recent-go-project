@@ -24,11 +24,11 @@
 
 1. make shelves an object for easier logging and less boilerplate - DONE
 2. add in CLI options for modifying behaviors - DONE
-3. make shelf constructor function and move counters to structs 
-4. account for order rates different than 2
-5. move the file to a streaming ingestion, so we don't load the entire file into memory
-6. make some sort of facility so that it's reading from a stream in general, and it can be piped in from another function
-7. update heuristic on overflow
+3. make shelf constructor function and move counters to structs  - DONE
+4. account for order rates different than 2 - DONE
+5. update heuristic on overflow
+6. move the file to a streaming ingestion, so we don't load the entire file into memory
+7. make some sort of facility so that it's reading from a stream in general, and it can be piped in from another function
 8. unit tests on functions
 9. add in pooling for coroutines
 10. better logging 
