@@ -17,18 +17,19 @@
 6. If coroutines, rework dispatching behavior to use a pool of coroutines.? - DONE
 7. rewrite in golang - WIP
 8. add in waitgroup for cleanup - DONE
-9. add in atomic arrays for shelves for displaying progress
-10. add in logging for all critical events per rubric
+9. add in atomic arrays for shelves for displaying progress - DONE
+10. add in logging for all critical events per rubric - DONE
 
 ## Fri 4/17
 
-1. update heuristic on overflow
-2. unit tests on functions
-3. add in pooling for coroutines
-4. better logging 
-5. narrative of behaviors + list of decisions made
-6. add in CLI options for modifying behaviors
-7. handoff to woody for polishing
+1. make shelves an object for easier logging and less boilerplate
+2. update heuristic on overflow
+3. unit tests on functions
+4. add in pooling for coroutines
+5. better logging 
+6. narrative of behaviors + list of decisions made
+7. add in CLI options for modifying behaviors
+8. handoff to woody for polishing
 
 
 ### Notes

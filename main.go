@@ -21,22 +21,24 @@ type Order struct {
 
 func courier(order Order,
 		counter *int32, arrival_time int,
-		modifier uint, wg *sync.WaitGroup){
-	// TODO: add proper logging for fetching,
-	// displaying shelf contents after fetch.
-	// TODO: add pointer for the array so we can remove it
+		modifier uint, wg *sync.WaitGroup, shelf []string,target_idx int){
 	time.Sleep(time.Duration(1000*arrival_time)*time.Millisecond)
 	a := float32(order.ShelfLife)
 	b := order.DecayRate*float32(arrival_time) * float32(modifier)
 	value := (a - b)/a
 	// remove item from shelf in either scenario
-	atomic.AddInt32(counter,1)
 	// need to log the score in either scenario
+	atomic.AddInt32(counter,1)
+	shelf[target_idx] = ""
+	// inform waitgroup that the coro is finished.
 	wg.Done()
+	fmt.Println("shelf:",shelf)
 	if (value <= 0){
-		fmt.Println("Discarded item due to expiration")
+		fmt.Printf("Discarded item due to expiration")
+		fmt.Printf("current shelf contents: %s\n", shelf)
 	} else {
-		fmt.Println("Courier fetched item")
+		fmt.Printf("Courier fetched item %s with remaining value of %.2f\n", order.Id, value)
+		fmt.Printf("current shelf contents: %s\n", shelf)
 	}
 }
 
@@ -69,6 +71,17 @@ func decrement(ct *int32){
 	atomic.AddInt32(ct,-1)
 
 }
+
+func placeInArray(target_arr []string, value string) int {
+	for i := 0; i < len(target_arr); i++ {
+		if (target_arr[i] == ""){
+			target_arr[i] = value
+			return i
+		}
+	}
+	return -1
+}
+
 // TODO: add in parameters for CLI options
 func runQueue(){
 
@@ -86,11 +99,20 @@ func runQueue(){
 	json.Unmarshal(byteArray, &orders)
 	arrlen := len(orders)
 
-	var wg  sync.WaitGroup
+	// waitgroups are for 
+	var wg sync.WaitGroup
 	over_ct,cold_ct,hot_ct,frozen_ct,dead := int32(15),int32(10),int32(10),int32(10),int32(0)
+	overflow,cold,hot,frozen := make([]string,15),make([]string,10),make([]string,10),make([]string,10)
+	for i := 0; i < 15; i++ {
+		overflow[i] = ""
+	}
+	for i := 0; i < 10; i++ {
+		cold[i] = "";
+		hot[i] = "";
+		frozen[i] = "";
+	}
+	fmt.Println(overflow)
 	for i:= 1; i < arrlen; i += 2 {
-		fmt.Println(orders[i],i)
-		fmt.Println(orders[i-1],i-1)
 		blob_1,blob_2 := orders[i],orders[i-1]
 		// TODO: add stuff for shelf contents
 		shelf_1 := selectShelf(&blob_1, &over_ct,
@@ -111,21 +133,46 @@ func runQueue(){
 		if (shelf_1 != &dead){
 			wg.Add(1)
 			if (shelf_1 == &over_ct){
-				go courier(blob_1, &over_ct,
-				arrival_1, 2, &wg)
+				// "go" keyword dispatches a goroutine 
+				target_idx := placeInArray(overflow,blob_1.Id);
+				fmt.Printf("Dispatched courier for order %s for overflow shelf\n", blob_1.Id)
+				go courier(blob_1, shelf_1,arrival_1, 2, &wg,overflow,
+					target_idx)
+			} else if (shelf_1 == &cold_ct){
+				target_idx := placeInArray(cold,blob_1.Id);
+				fmt.Printf("Dispatched courier for order %s for cold shelf\n", blob_1.Id)
+				go courier(blob_1, shelf_1,arrival_1,1,&wg,cold,target_idx);
+			} else if (shelf_1 == &hot_ct){
+				target_idx := placeInArray(hot,blob_1.Id);
+				fmt.Printf("Dispatched courier for order %s for hot shelf\n", blob_1.Id)
+				go courier(blob_1, shelf_1,arrival_1,1,&wg,hot,target_idx);
 			} else {
-				go courier(blob_1, shelf_1,
-					arrival_1,1,&wg)
+				target_idx := placeInArray(frozen,blob_1.Id);
+				fmt.Printf("Dispatched courier for order %s for frozen shelf\n", blob_1.Id)
+				go courier(blob_1, shelf_1,arrival_1,1,&wg,frozen,target_idx);
+
 			}
 		}
 		if (shelf_2 != &dead){
 			wg.Add(1)
 			if (shelf_2 == &over_ct){
-				go courier(blob_2, &over_ct,
-				arrival_2, 2,&wg)
-			} else {
+				target_idx := placeInArray(overflow,blob_2.Id);
+				fmt.Printf("Dispatched courier for order %s for overflow shelf\n", blob_2.Id)
 				go courier(blob_2, shelf_2,
-					arrival_2,1,&wg)
+				arrival_2, 2,&wg,overflow,target_idx)
+			} else if (shelf_2 == &cold_ct){
+				target_idx := placeInArray(cold,blob_2.Id);
+				fmt.Printf("Dispatched courier for order %s for cold shelf\n", blob_2.Id)
+				go courier(blob_2, shelf_2,arrival_2,1,&wg,cold,target_idx);
+			} else if (shelf_2 == &hot_ct){
+				target_idx := placeInArray(hot,blob_2.Id);
+				fmt.Printf("Dispatched courier for order %s for hot shelf\n", blob_2.Id)
+				go courier(blob_2, shelf_2,arrival_2,1,&wg,hot,target_idx);
+			} else {
+				target_idx := placeInArray(frozen,blob_2.Id);
+				fmt.Printf("Dispatched courier for order %s for frozen shelf\n", blob_2.Id)
+				go courier(blob_2, shelf_2,arrival_2,1,&wg,frozen, target_idx);
+
 			}
 		}
 		time.Sleep(2000*time.Millisecond)
@@ -135,6 +182,13 @@ func runQueue(){
 }
 
 func main(){
+	/*
+		TODO: add CLI args for the following settings:
+
+		- shelf sizes
+		- orders per second
+		- courier time ranges
+	*/
 	runQueue()
 
 }
