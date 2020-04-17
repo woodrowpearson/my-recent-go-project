@@ -26,15 +26,20 @@
 2. add in CLI options for modifying behaviors - DONE
 3. make shelf constructor function and move counters to structs  - DONE
 4. account for order rates different than 2 - DONE
-5. update heuristic on overflow
-6. move the file to a streaming ingestion, so we don't load the entire file into memory
-7. make some sort of facility so that it's reading from a stream in general, and it can be piped in from another function
-8. unit tests on functions
-9. add in pooling for coroutines
-10. better logging 
-11. narrative of behaviors + list of decisions made
-12. handoff to woody for polishing
+5. read chapters 1-8 on go with testing - WIP
+6. better logging to match rubric - DONE
+7. use built in struct constructors for args - DONE
+8. make the decrementAndUpdate a method on the struct - DONE
 
+## Sat 4/18
+
+1. read chapters 9-16 on go with testing
+2. add unit tests to functions
+3. update heuristic on overflow
+4. move file to streaming ingestion
+5. pool for coroutines
+6. narrative of behaviors + list of decisions made
+7. handoff to woody for polishing
 
 ### Notes
 

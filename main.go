@@ -12,18 +12,18 @@ import (
 	"math/rand"
 )
 
-var dispatch_success_msg = `
+const dispatch_success_msg = `
 Dispatched order %s to courier.
 Current shelf: %s.
 Current shelf contents: %s.
 `
-var dispatch_error_msg = "Order %s discarded due to lack of capacity\n"
-var pickup_success_msg = `
+const dispatch_error_msg = "Order %s discarded due to lack of capacity\n"
+const pickup_success_msg = `
 Courier fetched item %d with remaining value of %.2f.
 Current shelf: %s.
 Current shelf contents: %s.
 `
-var pickup_error_msg = `
+const pickup_error_msg = `
 Discarded item with id %s due to expiration.
 Current shelf: %s.
 Current shelf contents: %s.
@@ -38,9 +38,6 @@ type Order struct {
 }
 
 
-// TODO: make a constructor function for this
-// and use it to clean up the courier, shelf selection,
-// and decrement functions
 type Shelf struct {
 	counter int32
 	item_array []string
@@ -59,6 +56,19 @@ func buildShelf(array_capacity uint, name string,
 		shelf.item_array[i] = ""
 	}
 	return shelf
+}
+func (s Shelf) decrementAndUpdate(id string) int {
+	atomic.AddInt32(&s.counter, -1);
+	// TODO: make this smarter based on the counter value
+	for i := 0; i < len(s.item_array); i++ {
+		if (s.item_array[i] == ""){
+			s.item_array[i] = id
+			return i
+		}
+	}
+	// Due to where this is called in the worflow,
+	// This will never occur
+	return -1
 }
 
 type PrimaryArgs struct {
@@ -112,19 +122,6 @@ func selectShelf(order *Order, overflow_shelf *Shelf,
 }
 
 
-func decrementAndUpdate(shelf *Shelf, id string) int {
-	atomic.AddInt32(&shelf.counter, -1);
-	// TODO: make this smarter based on the counter value
-	for i := 0; i < len(shelf.item_array); i++ {
-		if (shelf.item_array[i] == ""){
-			shelf.item_array[i] = id
-			return i
-		}
-	}
-	// Due to where this is called in the worflow,
-	// This will never occur
-	return -1
-}
 
 func runQueue(args *PrimaryArgs){
 
@@ -144,7 +141,7 @@ func runQueue(args *PrimaryArgs){
 	json.Unmarshal(byteArray, &orders)
 	arrlen := uint(len(orders))
 
-	// waitgroups are for 
+	// TODO: add explanation and link for waitgroup behavior
 	var wg sync.WaitGroup
 	overflow := buildShelf(args.overflow_size,"overflow",
 			args.overflow_modifier)
@@ -156,6 +153,10 @@ func runQueue(args *PrimaryArgs){
 		/*
 			TODO: before dispatching, sort the items
 			by criticality (i.e. longest arrival time)
+			We'll want to compute the score for the order 
+			at instantiation. 
+			TODO: find an equivalent of python's bisect
+			function for inserting into the array in a sorted manner
 		*/
 		for j := uint(0); j < args.orders_per_second && i+j < arrlen; j++ {
 			order := orders[i+j]
@@ -168,14 +169,13 @@ func runQueue(args *PrimaryArgs){
 				cold,hot,frozen,dead)
 			if (shelf != dead){
 				wg.Add(1)
-				shelf_idx = decrementAndUpdate(shelf,order.Id)
+				shelf_idx = shelf.decrementAndUpdate(order.Id)
 				fmt.Printf(dispatch_success_msg, order.Id,
-					shelf.name, shelf.item_array) 
+					shelf.name, shelf.item_array)
 				go courier(order,shelf,arrival,&wg,shelf_idx)
 			} else {
 				fmt.Printf(dispatch_error_msg,order.Id)
 			}
-
 		}
 		time.Sleep(1000*time.Millisecond)
 	}
@@ -186,9 +186,8 @@ func runQueue(args *PrimaryArgs){
 func main(){
 	/*
 		TODO: clean up style stuff. I dont know what the rules
-		are for formatting.
+		are for formatting and camelcase vs snakecase.
 	*/
-
 
 	shelf_size_prompt := "Specifies shelf capacity."
 	overflowSize := flag.Uint("overflow_size", 15,shelf_size_prompt)
@@ -228,34 +227,24 @@ func main(){
 		*courierUpperBound < 1){
 		fmt.Println(courier_prompt)
 		os.Exit(1)
-
 	}
 	if (*ordersPerSecond < 1){
 		fmt.Println(order_rate_prompt)
 		os.Exit(1)
 	}
-	fmt.Println("overflow_size:",*overflowSize);
-	fmt.Println("hot_size:",*hotSize);
-	fmt.Println("cold_size:",*coldSize);
-	fmt.Println("frozen_size:",*frozenSize);
-	fmt.Println("courier_lower_bound", *courierLowerBound)
-	fmt.Println("courier_upper_bound", *courierUpperBound)
-	fmt.Println("orders_per_second", *ordersPerSecond)
-	fmt.Println("overflow_modifier", *overflow_modifier)
-	fmt.Println("cold_modifier", *cold_modifier)
-	fmt.Println("hot_modifier", *hot_modifier)
-	fmt.Println("frozen_modifier", *frozen_modifier)
-	args := new(PrimaryArgs)
-	args.overflow_size = *overflowSize
-	args.hot_size = *hotSize
-	args.cold_size = *coldSize
-	args.frozen_size = *frozenSize
-	args.courier_lower_bound = *courierLowerBound
-	args.courier_upper_bound = *courierUpperBound
-	args.orders_per_second = *ordersPerSecond
-	args.overflow_modifier = *overflow_modifier
-	args.cold_modifier = *cold_modifier
-	args.hot_modifier = *hot_modifier
-	args.frozen_modifier = *frozen_modifier
-	runQueue(args)
+	args := PrimaryArgs{
+		overflow_size:*overflowSize,
+		hot_size: *hotSize,
+		cold_size: *coldSize,
+		frozen_size: *frozenSize,
+		courier_lower_bound: *courierLowerBound,
+		courier_upper_bound: *courierUpperBound,
+		orders_per_second: *ordersPerSecond,
+		overflow_modifier: *overflow_modifier,
+		cold_modifier: *cold_modifier,
+		hot_modifier: *hot_modifier,
+		frozen_modifier: *frozen_modifier,
+	}
+	fmt.Printf("Configuration: %+v\n", args)
+	runQueue(&args)
 }
