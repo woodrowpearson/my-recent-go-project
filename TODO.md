@@ -27,7 +27,8 @@
 3. add in pooling for coroutines
 4. better logging 
 5. narrative of behaviors + list of decisions made
-6. handoff to woody for polishing
+6. add in CLI options for modifying behaviors
+7. handoff to woody for polishing
 
 
 ### Notes
