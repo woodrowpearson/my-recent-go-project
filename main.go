@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"time"
 	"encoding/json"
@@ -18,6 +19,28 @@ type Order struct {
 	ShelfLife uint
 	DecayRate float32
 }
+
+
+// TODO: make a constructor function for this
+// and use it to clean up the courier, shelf selection,
+// and decrement functions
+type Shelf struct {
+	Counter int32
+	ItemArray []string
+	Name string
+}
+
+
+type PrimaryArgs struct {
+	overflow_size uint
+	hot_size uint
+	cold_size uint
+	frozen_size uint
+	courier_lower_bound uint
+	courier_upper_bound uint
+	orders_per_second uint
+}
+
 
 func courier(order Order,
 		counter *int32, arrival_time int,
@@ -86,9 +109,16 @@ func placeInArray(target_arr []string, value string) int {
 	return -1
 }
 
-// TODO: add in parameters for CLI options
-func runQueue(){
+/*
+	TODO:
+		- use CLI args to inform dispatch, ingestion, and shelves
+		- account for order rates that aren't 2
+		- move the shelf and count stuff to the Shelf type.
 
+*/
+func runQueue(args *PrimaryArgs){
+
+	fmt.Println(args)
 	var orders []Order
 	inputFile, err := os.Open("orders.json")
 	if err != nil{
@@ -186,12 +216,63 @@ func runQueue(){
 
 func main(){
 	/*
-		TODO: add CLI args for the following settings:
-
-		- shelf sizes
-		- orders per second
-		- courier time ranges
+		TODO: clean up style stuff. I dont know what the rules
+		are for formatting.
 	*/
-	runQueue()
+
+
+	shelf_size_prompt := "Specifies shelf capacity."
+	overflowSize := flag.Uint("overflow_size", 15,shelf_size_prompt)
+	hotSize := flag.Uint("hot_size", 10,shelf_size_prompt)
+	coldSize := flag.Uint("cold_size", 10,shelf_size_prompt)
+	frozenSize := flag.Uint("frozen_size", 10,shelf_size_prompt)
+
+	courier_prompt := `
+	Specify the timeframe bound for courier arrival.
+	courier_lower_bound must be less than or equal to courier_upper_bound.
+	courier_lower_bound and courier_upper_bound must be greater than or
+	equal to 1.
+	`
+
+	courierLowerBound := flag.Uint("courier_lower_bound", 2, courier_prompt)
+	courierUpperBound := flag.Uint("courier_upper_bound",6,courier_prompt)
+
+	order_rate_prompt := `
+	Specify the number of orders ingested per second.
+	Must be greater than zero.
+	`
+	ordersPerSecond := flag.Uint("orders_per_second",2,order_rate_prompt)
+	flag.Parse()
+	if (*courierLowerBound > *courierUpperBound || *courierLowerBound < 1 ||
+		*courierUpperBound < 1){
+		fmt.Println(courier_prompt)
+		os.Exit(1)
+
+	}
+	if (*ordersPerSecond < 1){
+		fmt.Println(order_rate_prompt)
+		os.Exit(1)
+
+	}
+
+
+	fmt.Println("overflow_size:",*overflowSize);
+	fmt.Println("hot_size:",*hotSize);
+	fmt.Println("cold_size:",*coldSize);
+	fmt.Println("frozen_size:",*frozenSize);
+	fmt.Println("courier_lower_bound", *courierLowerBound)
+	fmt.Println("courier_upper_bound", *courierUpperBound)
+	fmt.Println("orders_per_second", *ordersPerSecond)
+
+	args := new(PrimaryArgs)
+	args.overflow_size = *overflowSize
+	args.hot_size = *hotSize
+	args.cold_size = *coldSize
+	args.frozen_size = *frozenSize
+	args.courier_lower_bound = *courierLowerBound
+	args.courier_upper_bound = *courierUpperBound
+	args.orders_per_second = *ordersPerSecond
+
+	runQueue(args)
 
 }

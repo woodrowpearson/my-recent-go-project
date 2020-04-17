@@ -22,14 +22,18 @@
 
 ## Fri 4/17
 
-1. make shelves an object for easier logging and less boilerplate
-2. update heuristic on overflow
-3. unit tests on functions
-4. add in pooling for coroutines
-5. better logging 
-6. narrative of behaviors + list of decisions made
-7. add in CLI options for modifying behaviors
-8. handoff to woody for polishing
+1. make shelves an object for easier logging and less boilerplate - DONE
+2. add in CLI options for modifying behaviors - DONE
+3. make shelf constructor function and move counters to structs 
+4. account for order rates different than 2
+5. move the file to a streaming ingestion, so we don't load the entire file into memory
+6. make some sort of facility so that it's reading from a stream in general, and it can be piped in from another function
+7. update heuristic on overflow
+8. unit tests on functions
+9. add in pooling for coroutines
+10. better logging 
+11. narrative of behaviors + list of decisions made
+12. handoff to woody for polishing
 
 
 ### Notes
@@ -49,4 +53,8 @@ celery worker -A worker.celery_app --loglevel=info
 second window:
 python order_queue.py
 
+## To Run
+
+go build main.go
+./main.go 
 
