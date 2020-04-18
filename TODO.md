@@ -42,7 +42,7 @@ that perform logging. find a way to do concurrent file writing
 - use the race condition detector in the integration tests: go test -race
 - make a suite of benchmarks at different input sizes, along with a function to generate random orders for benchmarking
 - we can use a channel for the updates on the array. This would avoid a scenario wherein somehow two order IDs are duplicated
-
+- be sure to run go vet
 1. read chapters 9-16 on go with testing
 2. add unit tests to functions
 3. update heuristic on overflow
@@ -50,6 +50,25 @@ that perform logging. find a way to do concurrent file writing
 5. pool for coroutines
 6. narrative of behaviors + list of decisions made
 7. handoff to woody for polishing
+
+Test cases to write
+
+1. decay factor computation tests
+2. courier output (good) - need mocks for the sleep call
+3. courier output(bad) - need mocks for the sleep call
+4. concurrent array access
+5. selectShelf (5 cases) - need outputs logged for tests
+6. buildShelf (1 case)
+7. argument parsing(1 case)
+8. main loop (2 cases)
+9. need to add heuristic for dispatching, along with tests for heuristic function
+10. mocks/configuration for the sleep calls
+
+modifications to make:
+	- coro pool
+	- streaming file ingestion
+	- thread-safe logging that can be tested
+	- mocks for decay functions
 
 ### Notes
 
