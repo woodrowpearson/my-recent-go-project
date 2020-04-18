@@ -36,20 +36,21 @@
 Testing Strategy:
 
 - Pass an io.Writer handle to functions
-that perform logging. find a way to do concurrent file writing 
+that perform logging. find a way to do concurrent file writing - DONE
 - write a unit test that reads from the io.Writer
 - look at the DI and mocking chapters
 - use the race condition detector in the integration tests: go test -race
 - make a suite of benchmarks at different input sizes, along with a function to generate random orders for benchmarking
 - we can use a channel for the updates on the array. This would avoid a scenario wherein somehow two order IDs are duplicated
 - be sure to run go vet
-1. read chapters 9-16 on go with testing
-2. add unit tests to functions
-3. update heuristic on overflow
-4. move file to streaming ingestion
-5. pool for coroutines
-6. narrative of behaviors + list of decisions made
-7. handoff to woody for polishing
+1. read chapters 9-16 on go with testing - DONE
+2. have logging go to an io.Writer - DONE
+3. add unit tests to functions
+4. update heuristic on overflow
+5. move file to streaming ingestion
+6. pool for coroutines
+7. narrative of behaviors + list of decisions made
+8. handoff to woody for polishing
 
 Test cases to write
 

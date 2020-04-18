@@ -6,6 +6,7 @@ import (
 	"time"
 	"encoding/json"
 	"io/ioutil"
+	"io"
 	"os"
 	"sync"
 	"sync/atomic"
@@ -19,7 +20,7 @@ Current shelf contents: %s.
 `
 const dispatch_error_msg = "Order %s discarded due to lack of capacity\n"
 const pickup_success_msg = `
-Courier fetched item %d with remaining value of %.2f.
+Courier fetched item %s with remaining value of %.2f.
 Current shelf: %s.
 Current shelf contents: %s.
 `
@@ -28,6 +29,12 @@ Discarded item with id %s due to expiration.
 Current shelf: %s.
 Current shelf contents: %s.
 `
+
+func check(e error){
+	if e != nil{
+		panic(e)
+	}
+}
 
 type Order struct {
 	Id string
@@ -43,6 +50,14 @@ type Shelf struct {
 	item_array []string
 	name string
 	modifier uint
+}
+
+type Shelves struct{
+	overflow *Shelf
+	cold *Shelf
+	hot *Shelf
+	frozen *Shelf
+	dead *Shelf
 }
 
 func buildShelf(array_capacity uint, name string,
@@ -86,50 +101,64 @@ type PrimaryArgs struct {
 	cold_modifier uint
 	hot_modifier uint
 	frozen_modifier uint
+	courier_out io.Writer
+	courier_err io.Writer
+	dispatch_out io.Writer
+	dispatch_err io.Writer
+	// normally it's 1, but for tests we'll want it at 0.
+	// refers to the value of a second
+	second_value time.Duration
+	shelves *Shelves
 }
 
 
-
-func courier(order Order, shelf *Shelf, arrival_time int,
-		wg *sync.WaitGroup,shelf_idx int){
-	// TODO: MAKE THIS READ FROM A CONSTANT, SO THAT IT CAN BE MOCKED TO ZERO
-	time.Sleep(time.Duration(1000*arrival_time)*time.Millisecond)
-	// END BLOCK
-	// TODO: MOVE THIS BLOCK TO A FUNCTION THAT CAN BE MOCKED
+func computeDecayStatus(order *Order,shelf *Shelf, arrival_time int) float32{
 	a := float32(order.ShelfLife)
 	b := order.DecayRate*float32(arrival_time)*float32(shelf.modifier)
 	value := (a-b)/a
+	return value
+}
+
+func (s *Shelf) incrementAndUpdate(shelf_idx int){
+	// TODO: unit test this. account for thread safety.
+	atomic.AddInt32(&s.counter,1)
+	s.item_array[shelf_idx] = ""
+}
+
+func courier(order Order, shelf *Shelf, arrival_time int,
+		wg *sync.WaitGroup,shelf_idx int,
+		courier_out io.Writer,courier_err io.Writer){
+	// TODO: ON TESTS, PASS IN ARRIVAL TIME AS 0
+	time.Sleep(time.Duration(1000*arrival_time)*time.Millisecond)
 	// END BLOCK
-	atomic.AddInt32(&shelf.counter,1)
-	shelf.item_array[shelf_idx] = ""
-	wg.Done()
+	value := computeDecayStatus(&order,shelf,arrival_time)
+	shelf.incrementAndUpdate(shelf_idx)
 	/*
-	 TODO: PASS IN AN io.Writer HANDLE TO THIS INSTEAD OF WRITING TO STDOUT.
-		ENSURE THREAD SAFETY	
+	In Linux, thread safety is assured in file access:
+	https://stackoverflow.com/questions/29981050/concurrent-writing-to-a-file`
 	*/
 	if (value <= 0){
-		fmt.Printf(pickup_error_msg,order.Id,shelf.name,shelf.item_array)
+		fmt.Fprintf(courier_err,pickup_error_msg,order.Id,shelf.name,shelf.item_array)
 	} else {
-		fmt.Printf(pickup_success_msg,order.Id,value,shelf.name,shelf.item_array)
+		fmt.Fprintf(courier_out,pickup_success_msg,order.Id,value,shelf.name,shelf.item_array)
 	}
+	// END BLOCK
+	wg.Done()
 }
 
 
-func selectShelf(order *Order, overflow_shelf *Shelf,
-		cold_shelf *Shelf, hot_shelf *Shelf,
-		frozen_shelf *Shelf,
-		dead_shelf *Shelf) *Shelf {
-	if (overflow_shelf.counter > 0){
-		return overflow_shelf
-	} else if (order.Temp == "cold" && cold_shelf.counter > 0){
-		return cold_shelf
-	} else if (order.Temp == "hot" && hot_shelf.counter > 0){
-		return hot_shelf
-	} else if (order.Temp == "frozen" &&
-		frozen_shelf.counter > 0){
-		return frozen_shelf
+func selectShelf(o *Order,s *Shelves) *Shelf {
+	if (s.overflow.counter > 0){
+		return s.overflow
+	} else if (o.Temp == "cold" && s.cold.counter > 0){
+		return s.cold
+	} else if (o.Temp == "hot" && s.hot.counter > 0){
+		return s.hot
+	} else if (o.Temp == "frozen" &&
+		s.frozen.counter > 0){
+		return s.frozen
 	}
-	return dead_shelf
+	return s.dead
 }
 
 
@@ -140,28 +169,16 @@ func runQueue(args *PrimaryArgs){
 	var orders []Order
 	// TODO: move this to a streaming json parse
 	inputFile, err := os.Open("orders.json")
-	if err != nil{
-		panic(err)
-	}
+	check(err)
 	fmt.Println("opened file")
 	defer inputFile.Close()
 	byteArray, err := ioutil.ReadAll(inputFile)
-	if err != nil{
-		panic(err)
-	}
+	check(err)
 	json.Unmarshal(byteArray, &orders)
 	arrlen := uint(len(orders))
 	// END BLOCK
-	// TODO: add explanation and link for waitgroup behavior
 	var wg sync.WaitGroup
-	// TODO: MOVE THESE FIVE TO THE INITIAL ARGUMENT PARSING STRUCT
-	overflow := buildShelf(args.overflow_size,"overflow",
-			args.overflow_modifier)
-	cold := buildShelf(args.cold_size, "cold",args.cold_modifier)
-	hot := buildShelf(args.hot_size,"hot",args.hot_modifier)
-	frozen := buildShelf(args.frozen_size,"frozen",args.frozen_modifier)
-	dead := buildShelf(1,"dead",0)
-	// END BLOCK
+	criticality_arr := make([]Order, args.orders_per_second)
 	for i := uint(0); i < arrlen; i += args.orders_per_second {
 		/*
 			TODO: before dispatching, sort the items
@@ -171,6 +188,9 @@ func runQueue(args *PrimaryArgs){
 			TODO: find an equivalent of python's bisect
 			function for inserting into the array in a sorted manner
 			TODO: MAKE THE CRITICALITY SORT A SEPARATE FUNCTION AND TEST IT
+			NOTE: the problem with sorting by criticality here is
+			that it makes our loop n^2 instead of o(n), since we iterate over
+			each item twice effectively.
 		*/
 		for j := uint(0); j < args.orders_per_second && i+j < arrlen; j++ {
 			order := orders[i+j]
@@ -179,23 +199,20 @@ func runQueue(args *PrimaryArgs){
 				int(args.courier_upper_bound -
 				args.courier_lower_bound)) +
 				int(args.courier_lower_bound)
-			shelf := selectShelf(&order, overflow,
-				cold,hot,frozen,dead)
+			shelf := selectShelf(&order,args.shelves)
 			// TODO: MOVE THIS TO OUTSIDE OF THE J LOOP.
-			// TODO: PASS IN AN IO.Writer INSTEAD OF 
-			// PRINTING TO STDOUT(FOR TESTING PURPOSES)
-			if (shelf != dead){
+			if (shelf != args.shelves.dead){
 				wg.Add(1)
 				shelf_idx = shelf.decrementAndUpdate(order.Id)
-				fmt.Printf(dispatch_success_msg, order.Id,
+				fmt.Fprintf(args.dispatch_out,dispatch_success_msg, order.Id,
 					shelf.name, shelf.item_array)
-				go courier(order,shelf,arrival,&wg,shelf_idx)
+				go courier(order,shelf,arrival,&wg,shelf_idx,args.courier_out,args.courier_err)
 			} else {
-				fmt.Printf(dispatch_error_msg,order.Id)
+				fmt.Fprintf(args.dispatch_err,dispatch_error_msg,order.Id)
 			}
 		}
-		// TODO: HAVE THIS READ FROM AN ARGUMENT PASSED IN, SO THAT IT CAN BE MOCKED
-		time.Sleep(1000*time.Millisecond)
+		fmt.Println(criticality_arr)
+		time.Sleep(args.second_value*time.Millisecond)
 	}
 	wg.Wait()
 	fmt.Println("complete")
@@ -250,6 +267,28 @@ func main(){
 		fmt.Println(order_rate_prompt)
 		os.Exit(1)
 	}
+	// TODO: add CLI args for logfile locations.
+	courier_out, err := os.Create("courier_out.log")
+	check(err)
+	defer courier_out.Close()
+	courier_err, err := os.Create("courier_err.log")
+	check(err)
+	defer courier_out.Close()
+	dispatch_out, err := os.Create("dispatch_out.log")
+	check(err)
+	defer dispatch_out.Close()
+	dispatch_err, err := os.Create("dispatch_err.log")
+	check(err)
+	defer courier_out.Close()
+	// END BLOCK
+	overflow := buildShelf(*overflowSize,"overflow",
+			*overflow_modifier)
+	cold := buildShelf(*coldSize, "cold",*cold_modifier)
+	hot := buildShelf(*hotSize,"hot",*hot_modifier)
+	frozen := buildShelf(*frozenSize,"frozen",*frozen_modifier)
+	dead := buildShelf(1,"dead",0)
+	shelves := Shelves{overflow:overflow,cold:cold,frozen:frozen,
+			hot:hot,dead:dead}
 	args := PrimaryArgs{
 		overflow_size:*overflowSize,
 		hot_size: *hotSize,
@@ -262,6 +301,12 @@ func main(){
 		cold_modifier: *cold_modifier,
 		hot_modifier: *hot_modifier,
 		frozen_modifier: *frozen_modifier,
+		courier_out:courier_out,
+		courier_err:courier_err,
+		dispatch_out:dispatch_out,
+		dispatch_err:dispatch_err,
+		second_value: 1000,
+		shelves: &shelves,
 	}
 	fmt.Printf("Configuration: %+v\n", args)
 	runQueue(&args)
