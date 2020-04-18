@@ -55,20 +55,20 @@ that perform logging. find a way to do concurrent file writing - DONE
 Test cases to write
 
 1. decay factor computation tests
-2. courier output (good) - need mocks for the sleep call
-3. courier output(bad) - need mocks for the sleep call
+2. courier output (good) - need mocks for the sleep call - DONE
+3. courier output(bad) - need mocks for the sleep call - DONE
 4. concurrent array access
 5. selectShelf (5 cases) - need outputs logged for tests
 6. buildShelf (1 case)
 7. argument parsing(1 case)
 8. main loop (2 cases)
 9. need to add heuristic for dispatching, along with tests for heuristic function
-10. mocks/configuration for the sleep calls
+10. mocks/configuration for the sleep calls - DONE
 
 modifications to make:
 	- coro pool
 	- streaming file ingestion
-	- thread-safe logging that can be tested
+	- thread-safe logging that can be tested - DONE
 	- mocks for decay functions
 
 ### Notes

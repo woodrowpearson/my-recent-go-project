@@ -13,7 +13,7 @@ Current shelf: %s.
 Current shelf contents: %s.
 `
 const PickupErrMsg = `
-Discarded item with id %s due to expiration.
+Discarded item with id %s due to expiration value of %.2f.
 Current shelf: %s.
 Current shelf contents: %s.
 `

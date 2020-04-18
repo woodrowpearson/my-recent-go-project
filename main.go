@@ -22,6 +22,9 @@ func check(e error){
 func computeDecayStatus(order *Order,shelf *Shelf, arrival_time int) float32{
 	a := float32(order.ShelfLife)
 	b := order.DecayRate*float32(arrival_time)*float32(shelf.modifier)
+	if (a <= 0){
+		return a
+	}
 	value := (a-b)/a
 	return value
 }
@@ -40,7 +43,7 @@ func courier(order Order, shelf *Shelf, arrival_time int,
 	https://stackoverflow.com/questions/29981050/concurrent-writing-to-a-file`
 	*/
 	if (value <= 0){
-		fmt.Fprintf(courier_err,PickupErrMsg,order.Id,shelf.name,shelf.item_array)
+		fmt.Fprintf(courier_err,PickupErrMsg,order.Id,value,shelf.name,shelf.item_array)
 	} else {
 		fmt.Fprintf(courier_out,PickupSuccessMsg,order.Id,value,shelf.name,shelf.item_array)
 	}
