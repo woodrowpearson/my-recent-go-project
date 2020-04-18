@@ -9,106 +9,13 @@ import (
 	"io"
 	"os"
 	"sync"
-	"sync/atomic"
 	"math/rand"
 )
-
-const dispatch_success_msg = `
-Dispatched order %s to courier.
-Current shelf: %s.
-Current shelf contents: %s.
-`
-const dispatch_error_msg = "Order %s discarded due to lack of capacity\n"
-const pickup_success_msg = `
-Courier fetched item %s with remaining value of %.2f.
-Current shelf: %s.
-Current shelf contents: %s.
-`
-const pickup_error_msg = `
-Discarded item with id %s due to expiration.
-Current shelf: %s.
-Current shelf contents: %s.
-`
 
 func check(e error){
 	if e != nil{
 		panic(e)
 	}
-}
-
-type Order struct {
-	Id string
-	Name string
-	Temp string// this should be an enum. TODO: Does Go have enums?
-	ShelfLife uint
-	DecayRate float32
-}
-
-
-type Shelf struct {
-	counter int32
-	item_array []string
-	name string
-	modifier uint
-}
-
-type Shelves struct{
-	overflow *Shelf
-	cold *Shelf
-	hot *Shelf
-	frozen *Shelf
-	dead *Shelf
-}
-
-func buildShelf(array_capacity uint, name string,
-		modifier uint) *Shelf {
-	// TODO: UNIT TEST THIS
-	shelf := new(Shelf)
-	shelf.item_array = make([]string, array_capacity)
-	shelf.name = name;
-	shelf.counter = int32(array_capacity)
-	shelf.modifier = modifier
-	for i := uint(0); i < array_capacity; i++ {
-		shelf.item_array[i] = ""
-	}
-	return shelf
-}
-// TODO: MAKE THIS THROW AN ERROR ON PATHOLOGICAL RESPONSE OF NONE FOUND
-func (s *Shelf) decrementAndUpdate(id string) int {
-	atomic.AddInt32(&s.counter, -1);
-	// TODO: make this smarter based on the counter value
-	// TODO: UNIT TEST THIS
-	for i := 0; i < len(s.item_array); i++ {
-		if (s.item_array[i] == ""){
-			s.item_array[i] = id
-			return i
-		}
-	}
-	// Due to where this is called in the worflow,
-	// This will never occur
-	return -1
-}
-
-type PrimaryArgs struct {
-	overflow_size uint
-	hot_size uint
-	cold_size uint
-	frozen_size uint
-	courier_lower_bound uint
-	courier_upper_bound uint
-	orders_per_second uint
-	overflow_modifier uint
-	cold_modifier uint
-	hot_modifier uint
-	frozen_modifier uint
-	courier_out io.Writer
-	courier_err io.Writer
-	dispatch_out io.Writer
-	dispatch_err io.Writer
-	// normally it's 1, but for tests we'll want it at 0.
-	// refers to the value of a second
-	second_value time.Duration
-	shelves *Shelves
 }
 
 
@@ -119,11 +26,6 @@ func computeDecayStatus(order *Order,shelf *Shelf, arrival_time int) float32{
 	return value
 }
 
-func (s *Shelf) incrementAndUpdate(shelf_idx int){
-	// TODO: unit test this. account for thread safety.
-	atomic.AddInt32(&s.counter,1)
-	s.item_array[shelf_idx] = ""
-}
 
 func courier(order Order, shelf *Shelf, arrival_time int,
 		wg *sync.WaitGroup,shelf_idx int,
@@ -138,9 +40,9 @@ func courier(order Order, shelf *Shelf, arrival_time int,
 	https://stackoverflow.com/questions/29981050/concurrent-writing-to-a-file`
 	*/
 	if (value <= 0){
-		fmt.Fprintf(courier_err,pickup_error_msg,order.Id,shelf.name,shelf.item_array)
+		fmt.Fprintf(courier_err,PickupErrMsg,order.Id,shelf.name,shelf.item_array)
 	} else {
-		fmt.Fprintf(courier_out,pickup_success_msg,order.Id,value,shelf.name,shelf.item_array)
+		fmt.Fprintf(courier_out,PickupSuccessMsg,order.Id,value,shelf.name,shelf.item_array)
 	}
 	// END BLOCK
 	wg.Done()
@@ -204,11 +106,11 @@ func runQueue(args *PrimaryArgs){
 			if (shelf != args.shelves.dead){
 				wg.Add(1)
 				shelf_idx = shelf.decrementAndUpdate(order.Id)
-				fmt.Fprintf(args.dispatch_out,dispatch_success_msg, order.Id,
+				fmt.Fprintf(args.dispatch_out,DispatchSuccessMsg, order.Id,
 					shelf.name, shelf.item_array)
 				go courier(order,shelf,arrival,&wg,shelf_idx,args.courier_out,args.courier_err)
 			} else {
-				fmt.Fprintf(args.dispatch_err,dispatch_error_msg,order.Id)
+				fmt.Fprintf(args.dispatch_err,DispatchErrMsg,order.Id)
 			}
 		}
 		fmt.Println(criticality_arr)
@@ -224,47 +126,35 @@ func main(){
 		are for formatting and camelcase vs snakecase.
 	*/
 
-	shelf_size_prompt := "Specifies shelf capacity."
-	overflowSize := flag.Uint("overflow_size", 15,shelf_size_prompt)
-	hotSize := flag.Uint("hot_size", 10,shelf_size_prompt)
-	coldSize := flag.Uint("cold_size", 10,shelf_size_prompt)
-	frozenSize := flag.Uint("frozen_size", 10,shelf_size_prompt)
+	overflowSize := flag.Uint("overflow_size", 15,ShelfSizePrompt)
+	hotSize := flag.Uint("hot_size", 10,ShelfSizePrompt)
+	coldSize := flag.Uint("cold_size", 10,ShelfSizePrompt)
+	frozenSize := flag.Uint("frozen_size", 10,ShelfSizePrompt)
 
-	shelf_modifier_prompt := "Specifies shelf decay modifier"
 	overflow_modifier := flag.Uint("overflow_modifier",2,
-			shelf_modifier_prompt)
+			ShelfModifierPrompt)
 	cold_modifier := flag.Uint("cold_modifier",1,
-			shelf_modifier_prompt)
+			ShelfModifierPrompt)
 	hot_modifier := flag.Uint("hot_modifier",1,
-			shelf_modifier_prompt)
+			ShelfModifierPrompt)
 	frozen_modifier := flag.Uint("frozen_modifier",1,
-			shelf_modifier_prompt)
+			ShelfModifierPrompt)
 
 
-	courier_prompt := `
-	Specify the timeframe bound for courier arrival.
-	courier_lower_bound must be less than or equal to courier_upper_bound.
-	courier_lower_bound and courier_upper_bound must be greater than or
-	equal to 1.
-	`
 
-	courierLowerBound := flag.Uint("courier_lower_bound", 2, courier_prompt)
-	courierUpperBound := flag.Uint("courier_upper_bound",6,courier_prompt)
+	courierLowerBound := flag.Uint("courier_lower_bound", 2, CourierPrompt)
+	courierUpperBound := flag.Uint("courier_upper_bound",6,CourierPrompt)
 
-	order_rate_prompt := `
-	Specify the number of orders ingested per second.
-	Must be greater than zero.
-	`
-	ordersPerSecond := flag.Uint("orders_per_second",2,order_rate_prompt)
+	ordersPerSecond := flag.Uint("orders_per_second",2,OrderRatePrompt)
 	flag.Parse()
 	if (*courierLowerBound > *courierUpperBound ||
 		 *courierLowerBound < 1 ||
 		*courierUpperBound < 1){
-		fmt.Println(courier_prompt)
+		fmt.Println(CourierPrompt)
 		os.Exit(1)
 	}
 	if (*ordersPerSecond < 1){
-		fmt.Println(order_rate_prompt)
+		fmt.Println(OrderRatePrompt)
 		os.Exit(1)
 	}
 	// TODO: add CLI args for logfile locations.
