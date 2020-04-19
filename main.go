@@ -1,7 +1,7 @@
 package main
 
 import (
-	"flag"
+//	"flag"
 	"fmt"
 	"time"
 	"encoding/json"
@@ -10,6 +10,8 @@ import (
 	"os"
 	"sync"
 	"math/rand"
+	"bufio"
+//	"github.com/francoispqt/gojay"
 )
 
 func check(e error){
@@ -125,65 +127,153 @@ func runQueue(args *SimulatorConfig){
 	fmt.Println("complete")
 }
 
-func main(){
+func streamFromSource(inputSource io.Reader, resultChannel chan Order){
 	/*
-		TODO: clean up style stuff. I dont know what the rules
-		are for formatting and camelcase vs snakecase.
+		a websocket can be represented by an io.Reader
+		For the purposes of the default, it will be a file.
+		For the unit tests, we'll use a bytes.Buffer
 	*/
 
-	overflowSize := flag.Uint("overflow_size", 15,ShelfSizePrompt)
-	hotSize := flag.Uint("hot_size", 10,ShelfSizePrompt)
-	coldSize := flag.Uint("cold_size", 10,ShelfSizePrompt)
-	frozenSize := flag.Uint("frozen_size", 10,ShelfSizePrompt)
-
-	overflow_modifier := flag.Uint("overflow_modifier",2,
-			ShelfModifierPrompt)
-	cold_modifier := flag.Uint("cold_modifier",1,
-			ShelfModifierPrompt)
-	hot_modifier := flag.Uint("hot_modifier",1,
-			ShelfModifierPrompt)
-	frozen_modifier := flag.Uint("frozen_modifier",1,
-			ShelfModifierPrompt)
-
-	courierLowerBound := flag.Uint("courier_lower_bound", 2, CourierPrompt)
-	courierUpperBound := flag.Uint("courier_upper_bound",6,CourierPrompt)
-	ordersPerSecond := flag.Uint("orders_per_second",2,OrderRatePrompt)
-	flag.Parse()
-	courier_out, err := os.Create("courier_out.log")
+	dec := json.NewDecoder(bufio.NewReader(inputSource))
+	t, err := dec.Token()
+	fmt.Println(t)
 	check(err)
-	defer courier_out.Close()
-	courier_err, err := os.Create("courier_err.log")
-	check(err)
-	defer courier_out.Close()
-	dispatch_out, err := os.Create("dispatch_out.log")
-	check(err)
-	defer dispatch_out.Close()
-	dispatch_err, err := os.Create("dispatch_err.log")
-	check(err)
-	defer courier_out.Close()
-	// END BLOCK
-	args, err := BuildConfig(
-		*overflowSize,
-		*hotSize,
-		*coldSize,
-		*frozenSize,
-		*courierLowerBound,
-		*courierUpperBound,
-		*ordersPerSecond,
-		*overflow_modifier,
-		*cold_modifier,
-		*hot_modifier,
-		*frozen_modifier,
-		courier_out,
-		courier_err,
-		dispatch_out,
-		dispatch_err,
-		1000,
-	)
-	if err != nil {
-		fmt.Println(err.Error());
-		os.Exit(1)
+	for dec.More(){
+		var o Order
+		err := dec.Decode(&o)
+		check(err)
+		fmt.Printf("generated blob: %+v\n",o)
+		resultChannel <- o
+		time.Sleep(1*time.Second)
 	}
-	fmt.Printf("Configuration: %+v\n", args)
-	runQueue(args)
+	t, err = dec.Token()
+	fmt.Println(t)
+	check(err)
 }
+
+
+
+
+func main(){
+
+	inputFile,err := os.Open("orders.json")
+	check(err)
+	defer inputFile.Close()
+	resultChannel := make(chan Order)
+	go streamFromSource(inputFile,resultChannel)
+	for {
+		select {
+			case v := <-resultChannel:
+				fmt.Println("received blob")
+				fmt.Println(v)
+//				time.Sleep(1*time.Second)
+			case <-time.After(10*time.Second):
+				fmt.Println("done")
+				os.Exit(0)
+		}
+	}
+
+}
+
+// we need to make a channel for orders.
+//type ChannelStream chan *Order
+
+//func (c ChannelStream) UnmarshalStream(dec *gojay.StreamDecoder) error {
+//	fmt.Println("here")
+//	o := &Order{}
+//	if err := dec.Object(o); err != nil{
+//		panic(err)
+//	}
+//	c <- o
+//	return nil
+//}
+
+//func main(){
+//
+//	streamChan := ChannelStream(make(chan *Order))
+//	inputFile,err := os.Open("orders.json")
+//	check(err)
+//	defer inputFile.Close()
+//	//https://godoc.org/github.com/francoispqt/gojay#BorrowDecoder
+//	// takes in an io.Reader. gojay example
+//	// uses a websocket.Dial() which is an io.Reader()
+//	// os.Open() also returns an io.Reader
+//	dec := gojay.Stream.BorrowDecoder(inputFile)
+//	go dec.DecodeStream(streamChan)
+//	for {
+//		select {
+//			case v := <-streamChan:
+//				fmt.Println(v)
+//			case <-dec.Done():
+//				fmt.Println("finished")
+//				os.Exit(0)
+//
+//		}
+//
+//
+//	}
+//
+//}
+
+//func main(){
+//	/*
+//		TODO: clean up style stuff. I dont know what the rules
+//		are for formatting and camelcase vs snakecase.
+//	*/
+//
+//	overflowSize := flag.Uint("overflow_size", 15,ShelfSizePrompt)
+//	hotSize := flag.Uint("hot_size", 10,ShelfSizePrompt)
+//	coldSize := flag.Uint("cold_size", 10,ShelfSizePrompt)
+//	frozenSize := flag.Uint("frozen_size", 10,ShelfSizePrompt)
+//
+//	overflow_modifier := flag.Uint("overflow_modifier",2,
+//			ShelfModifierPrompt)
+//	cold_modifier := flag.Uint("cold_modifier",1,
+//			ShelfModifierPrompt)
+//	hot_modifier := flag.Uint("hot_modifier",1,
+//			ShelfModifierPrompt)
+//	frozen_modifier := flag.Uint("frozen_modifier",1,
+//			ShelfModifierPrompt)
+//
+//	courierLowerBound := flag.Uint("courier_lower_bound", 2, CourierPrompt)
+//	courierUpperBound := flag.Uint("courier_upper_bound",6,CourierPrompt)
+//	ordersPerSecond := flag.Uint("orders_per_second",2,OrderRatePrompt)
+//	flag.Parse()
+//	courier_out, err := os.Create("courier_out.log")
+//	check(err)
+//	defer courier_out.Close()
+//	courier_err, err := os.Create("courier_err.log")
+//	check(err)
+//	defer courier_out.Close()
+//	dispatch_out, err := os.Create("dispatch_out.log")
+//	check(err)
+//	defer dispatch_out.Close()
+//	dispatch_err, err := os.Create("dispatch_err.log")
+//	check(err)
+//	defer courier_out.Close()
+//	// END BLOCK
+//	args, err := BuildConfig(
+//		*overflowSize,
+//		*hotSize,
+//		*coldSize,
+//		*frozenSize,
+//		*courierLowerBound,
+//		*courierUpperBound,
+//		*ordersPerSecond,
+//		*overflow_modifier,
+//		*cold_modifier,
+//		*hot_modifier,
+//		*frozen_modifier,
+//		courier_out,
+//		courier_err,
+//		dispatch_out,
+//		dispatch_err,
+//		1000,
+//	)
+//	if err != nil {
+//		fmt.Println(err.Error());
+//		os.Exit(1)
+//	}
+//	fmt.Printf("Configuration: %+v\n", args)
+////	runQueue(args)
+//}

@@ -1,6 +1,7 @@
 package main
 
 import (
+//	"github.com/francoispqt/gojay"
 	"sync/atomic"
 	"errors"
 )
@@ -9,10 +10,30 @@ type Order struct {
 	Id string
 	Name string
 	Temp string// this should be an enum. TODO: Does Go have enums?
-	ShelfLife uint
+	ShelfLife uint32
 	DecayRate float32
 }
 
+//func(o *Order) UnmarshalJSONObject(dec *gojay.Decoder, key string) error{
+//
+//	switch key{
+//		case "id":
+//			return dec.String(&o.Id)
+//		case "name":
+//			return dec.String(&o.Name)
+//		case "temp":
+//			return dec.String(&o.Temp)
+//		case "shelfLife":
+//			return dec.Uint32(&o.ShelfLife)
+//		case "decayRate":
+//			return dec.Float32(&o.DecayRate)
+//	}
+//
+//	return nil
+//}
+//func(o *Order) NKeys() int{
+//	return 5
+//}
 
 type Shelf struct {
 	counter int32

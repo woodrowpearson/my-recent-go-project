@@ -74,6 +74,10 @@ modifications to make:
 
 ## Sunday 4/19
 
+1. make JSON stream from a file - DONE
+2. make JSON stream push to a channel, on a timer
+3. rework main loop to ingest in blocks based on a Wait
+
 1. add in goroutine pool
 2. add in streaming json ingestion
 3. dispatching heuristic
