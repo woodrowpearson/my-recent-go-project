@@ -22,7 +22,7 @@ func check(e error){
 func computeDecayStatus(order *Order,shelf *Shelf, arrival_time int) float32{
 	a := float32(order.ShelfLife)
 	b := order.DecayRate*float32(arrival_time)*float32(shelf.modifier)
-	if (a <= 0){
+	if (a <= b){
 		return a
 	}
 	value := (a-b)/a
@@ -70,7 +70,10 @@ func runQueue(args *SimulatorConfig){
 
 	fmt.Println(args)
 	var orders []Order
-	// TODO: move this to a streaming json parse
+	/*
+	 TODO: move this to a streaming json parse
+		Using an io.Reader passed in by the config.
+	*/
 	inputFile, err := os.Open("orders.json")
 	check(err)
 	fmt.Println("opened file")
