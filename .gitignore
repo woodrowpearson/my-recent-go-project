@@ -1,3 +1,7 @@
 main
 hello
+<<<<<<< HEAD
 .idea/*
+=======
+*.log
+>>>>>>> 6ce3d58bddea9f3bb71a428c327424f5ec5c6724
