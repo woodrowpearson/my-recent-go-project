@@ -33,9 +33,7 @@ func computeDecayStatus(order *Order,shelf *Shelf, arrival_time int) float32{
 func courier(order Order, shelf *Shelf, arrival_time int,
 		wg *sync.WaitGroup,shelf_idx int,
 		courier_out io.Writer,courier_err io.Writer){
-	// TODO: ON TESTS, PASS IN ARRIVAL TIME AS 0
 	time.Sleep(time.Duration(1000*arrival_time)*time.Millisecond)
-	// END BLOCK
 	value := computeDecayStatus(&order,shelf,arrival_time)
 	shelf.incrementAndUpdate(shelf_idx)
 	/*
@@ -144,24 +142,10 @@ func main(){
 	frozen_modifier := flag.Uint("frozen_modifier",1,
 			ShelfModifierPrompt)
 
-
-
 	courierLowerBound := flag.Uint("courier_lower_bound", 2, CourierPrompt)
 	courierUpperBound := flag.Uint("courier_upper_bound",6,CourierPrompt)
-
 	ordersPerSecond := flag.Uint("orders_per_second",2,OrderRatePrompt)
 	flag.Parse()
-	if (*courierLowerBound > *courierUpperBound ||
-		 *courierLowerBound < 1 ||
-		*courierUpperBound < 1){
-		fmt.Println(CourierPrompt)
-		os.Exit(1)
-	}
-	if (*ordersPerSecond < 1){
-		fmt.Println(OrderRatePrompt)
-		os.Exit(1)
-	}
-	// TODO: add CLI args for logfile locations.
 	courier_out, err := os.Create("courier_out.log")
 	check(err)
 	defer courier_out.Close()
@@ -175,33 +159,28 @@ func main(){
 	check(err)
 	defer courier_out.Close()
 	// END BLOCK
-	overflow := buildShelf(*overflowSize,"overflow",
-			*overflow_modifier)
-	cold := buildShelf(*coldSize, "cold",*cold_modifier)
-	hot := buildShelf(*hotSize,"hot",*hot_modifier)
-	frozen := buildShelf(*frozenSize,"frozen",*frozen_modifier)
-	dead := buildShelf(1,"dead",0)
-	shelves := Shelves{overflow:overflow,cold:cold,frozen:frozen,
-			hot:hot,dead:dead}
-	args := SimulatorConfig{
-		overflow_size:*overflowSize,
-		hot_size: *hotSize,
-		cold_size: *coldSize,
-		frozen_size: *frozenSize,
-		courier_lower_bound: *courierLowerBound,
-		courier_upper_bound: *courierUpperBound,
-		orders_per_second: *ordersPerSecond,
-		overflow_modifier: *overflow_modifier,
-		cold_modifier: *cold_modifier,
-		hot_modifier: *hot_modifier,
-		frozen_modifier: *frozen_modifier,
-		courier_out:courier_out,
-		courier_err:courier_err,
-		dispatch_out:dispatch_out,
-		dispatch_err:dispatch_err,
-		second_value: 1000,
-		shelves: &shelves,
+	args, err := BuildConfig(
+		*overflowSize,
+		*hotSize,
+		*coldSize,
+		*frozenSize,
+		*courierLowerBound,
+		*courierUpperBound,
+		*ordersPerSecond,
+		*overflow_modifier,
+		*cold_modifier,
+		*hot_modifier,
+		*frozen_modifier,
+		courier_out,
+		courier_err,
+		dispatch_out,
+		dispatch_err,
+		1000,
+	)
+	if err != nil {
+		fmt.Println(err.Error());
+		os.Exit(1)
 	}
 	fmt.Printf("Configuration: %+v\n", args)
-	runQueue(&args)
+	runQueue(args)
 }

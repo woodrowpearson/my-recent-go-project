@@ -1,9 +1,7 @@
 package main
 
 import (
-	"time"
 	"sync/atomic"
-	"io"
 	"errors"
 )
 
@@ -80,25 +78,3 @@ type Shelves struct{
 	dead *Shelf
 }
 
-// Helper struct for keeping argument lengths reasonable.
-type SimulatorConfig struct {
-	overflow_size uint
-	hot_size uint
-	cold_size uint
-	frozen_size uint
-	courier_lower_bound uint
-	courier_upper_bound uint
-	orders_per_second uint
-	overflow_modifier uint
-	cold_modifier uint
-	hot_modifier uint
-	frozen_modifier uint
-	courier_out io.Writer
-	courier_err io.Writer
-	dispatch_out io.Writer
-	dispatch_err io.Writer
-	// normally it's 1, but for tests we'll want it at 0.
-	// refers to the value of a second
-	second_value time.Duration
-	shelves *Shelves
-}

@@ -51,6 +51,7 @@ that perform logging. find a way to do concurrent file writing - DONE
 6. pool for coroutines
 7. narrative of behaviors + list of decisions made
 8. handoff to woody for polishing
+9. move argparse to a separate file - DONE
 
 Test cases to write
 
@@ -76,7 +77,6 @@ modifications to make:
 1. add in goroutine pool
 2. add in streaming json ingestion
 3. dispatching heuristic
-4. move argparse to a separate file
 5. unit tests for all remaining cases incl concurrency
 6. move to a package
 7. have main.go import from the package as a CLI client.
