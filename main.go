@@ -132,6 +132,12 @@ func streamFromSource(inputSource io.Reader, resultChannel chan Order){
 		a websocket can be represented by an io.Reader
 		For the purposes of the default, it will be a file.
 		For the unit tests, we'll use a bytes.Buffer
+
+		We need to use a stream because parsing an entire file
+		in memory could cause the box to run out of RAM
+		(i.e. the JSON array in the file is 8gb).
+		Additionally, by using a stream, a separate program could
+		hook things in via a websocket.
 	*/
 
 	dec := json.NewDecoder(bufio.NewReader(inputSource))
