@@ -68,7 +68,7 @@ func selectShelf(o *Order,s *Shelves) *Shelf {
 
 
 
-func runQueue(args *PrimaryArgs){
+func runQueue(args *SimulatorConfig){
 
 	fmt.Println(args)
 	var orders []Order
@@ -108,7 +108,8 @@ func runQueue(args *PrimaryArgs){
 			// TODO: MOVE THIS TO OUTSIDE OF THE J LOOP.
 			if (shelf != args.shelves.dead){
 				wg.Add(1)
-				shelf_idx = shelf.decrementAndUpdate(order.Id)
+				shelf_idx,err = shelf.decrementAndUpdate(order.Id)
+				check(err)
 				fmt.Fprintf(args.dispatch_out,DispatchSuccessMsg, order.Id,
 					shelf.name, shelf.item_array)
 				go courier(order,shelf,arrival,&wg,shelf_idx,args.courier_out,args.courier_err)
@@ -182,7 +183,7 @@ func main(){
 	dead := buildShelf(1,"dead",0)
 	shelves := Shelves{overflow:overflow,cold:cold,frozen:frozen,
 			hot:hot,dead:dead}
-	args := PrimaryArgs{
+	args := SimulatorConfig{
 		overflow_size:*overflowSize,
 		hot_size: *hotSize,
 		cold_size: *coldSize,

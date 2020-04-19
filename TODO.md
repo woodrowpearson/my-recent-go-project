@@ -71,6 +71,18 @@ modifications to make:
 	- thread-safe logging that can be tested - DONE
 	- mocks for decay functions
 
+## Sunday 4/19
+
+1. add in goroutine pool
+2. add in streaming json ingestion
+3. dispatching heuristic
+4. move argparse to a separate file
+5. unit tests for all remaining cases incl concurrency
+6. move to a package
+7. have main.go import from the package as a CLI client.
+8. narrative for woody.
+
+
 ### Notes
 
 1. current implementation with celery/redis WILL NOT SCALE. the logging rubric requires listing

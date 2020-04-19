@@ -4,6 +4,7 @@ import (
 	"time"
 	"sync/atomic"
 	"io"
+	"errors"
 )
 
 type Order struct {
@@ -20,12 +21,7 @@ type Shelf struct {
 	item_array []string
 	name string
 	modifier uint
-}
-
-func (s *Shelf) incrementAndUpdate(shelf_idx int){
-	// TODO: unit test this. account for thread safety.
-	atomic.AddInt32(&s.counter,1)
-	s.item_array[shelf_idx] = ""
+	last_updated_idx uint32
 }
 
 func buildShelf(array_capacity uint, name string,
@@ -36,27 +32,46 @@ func buildShelf(array_capacity uint, name string,
 	shelf.name = name;
 	shelf.counter = int32(array_capacity)
 	shelf.modifier = modifier
+	shelf.last_updated_idx = 0
 	for i := uint(0); i < array_capacity; i++ {
 		shelf.item_array[i] = ""
 	}
 	return shelf
 }
-// TODO: MAKE THIS THROW AN ERROR ON PATHOLOGICAL RESPONSE OF NONE FOUND
-func (s *Shelf) decrementAndUpdate(id string) int {
+
+func (s *Shelf) incrementAndUpdate(shelf_idx int){
+	// TODO: unit test this. account for thread safety.
+	/*
+		Explanation: before setting the value
+		indicating the shelf has available space,
+		we want to clear the value out.
+		This prevents a scenario where decrementAndUpdate
+		overwrites an ID that has not been cleared yet.
+
+	*/
+	s.item_array[shelf_idx] = ""
+	atomic.StoreUint32(&s.last_updated_idx,uint32(shelf_idx))
+	atomic.AddInt32(&s.counter,1)
+}
+func (s *Shelf) decrementAndUpdate(id string) (int,error) {
 	atomic.AddInt32(&s.counter, -1);
-	// TODO: make this smarter based on the counter value
-	// TODO: UNIT TEST THIS
-	for i := 0; i < len(s.item_array); i++ {
-		if (s.item_array[i] == ""){
-			s.item_array[i] = id
-			return i
+	if s.item_array[s.last_updated_idx] != "" {
+		// if the spot is taken, we've got to scan for a new
+		for i := 0; i < len(s.item_array); i++ {
+			if (s.item_array[i] == ""){
+				s.item_array[i] = id
+				return i,nil
+			}
 		}
+		return -1,errors.New("pathological case on decrementAndUpdate")
+	} else {
+		// we can avoid a scan if the spot isn't taken
+		s.item_array[s.last_updated_idx] = id
+		return int(s.last_updated_idx),nil
 	}
-	// Due to where this is called in the worflow,
-	// This will never occur
-	return -1
 }
 
+// Helper struct for keeping argument lengths reasonable.
 type Shelves struct{
 	overflow *Shelf
 	cold *Shelf
@@ -64,7 +79,9 @@ type Shelves struct{
 	frozen *Shelf
 	dead *Shelf
 }
-type PrimaryArgs struct {
+
+// Helper struct for keeping argument lengths reasonable.
+type SimulatorConfig struct {
 	overflow_size uint
 	hot_size uint
 	cold_size uint
