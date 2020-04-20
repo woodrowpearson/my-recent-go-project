@@ -9,31 +9,22 @@ import (
 type Order struct {
 	Id string
 	Name string
-	Temp string// this should be an enum. TODO: Does Go have enums?
+	Temp string
 	ShelfLife uint32
 	DecayRate float32
+	DecayCritical bool
+	DecayScore float32
 }
 
-//func(o *Order) UnmarshalJSONObject(dec *gojay.Decoder, key string) error{
-//
-//	switch key{
-//		case "id":
-//			return dec.String(&o.Id)
-//		case "name":
-//			return dec.String(&o.Name)
-//		case "temp":
-//			return dec.String(&o.Temp)
-//		case "shelfLife":
-//			return dec.Uint32(&o.ShelfLife)
-//		case "decayRate":
-//			return dec.Float32(&o.DecayRate)
-//	}
-//
-//	return nil
-//}
-//func(o *Order) NKeys() int{
-//	return 5
-//}
+func(o *Order) computeDecayScore(s *Shelf,
+	arrival_time int) float32{
+	a := float32(o.ShelfLife)
+	b := o.DecayRate*float32(arrival_time)*float32(s.modifier)
+	if a == b {
+		return 0
+	}
+	return (a-b)/a
+}
 
 type Shelf struct {
 	counter int32

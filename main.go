@@ -16,29 +16,17 @@ func check(e error){
 	}
 }
 
-
-func computeDecayStatus(order *Order,shelf *Shelf, arrival_time int) float32{
-	a := float32(order.ShelfLife)
-	b := order.DecayRate*float32(arrival_time)*float32(shelf.modifier)
-	if (a <= b){
-		return a
-	}
-	value := (a-b)/a
-	return value
-}
-
-
 func courier(order *Order, shelf *Shelf, arrival_time int,
 		wg *sync.WaitGroup,shelf_idx int,
 		courier_out io.Writer,courier_err io.Writer){
 	time.Sleep(time.Duration(1000*arrival_time)*time.Millisecond)
-	value := computeDecayStatus(order,shelf,arrival_time)
+	value := order.computeDecayScore(shelf,arrival_time)
 	shelf.incrementAndUpdate(shelf_idx)
 	/*
 	In Linux, thread safety is assured in file access:
 	https://stackoverflow.com/questions/29981050/concurrent-writing-to-a-file`
 	*/
-	if (value <= 0){
+	if (order.DecayCritical){
 		fmt.Fprintf(courier_err,PickupErrMsg,order.Id,value,shelf.name,shelf.item_array)
 	} else {
 		fmt.Fprintf(courier_out,PickupSuccessMsg,order.Id,value,shelf.name,shelf.item_array)
@@ -47,24 +35,57 @@ func courier(order *Order, shelf *Shelf, arrival_time int,
 }
 
 
-func selectShelf(o *Order,s *Shelves) *Shelf {
+func selectShelf(o *Order,s *Shelves,arrival_time int) *Shelf {
 	/*
 	TODO: add in a criticality score for the order.
 	If the order is not safe for overflow, don't stick it 
 	in overflow unless matching shelf is empty.
 
 	*/
-	if (s.overflow.counter > 0){
-		return s.overflow
-	} else if (o.Temp == "cold" && s.cold.counter > 0){
-		return s.cold
-	} else if (o.Temp == "hot" && s.hot.counter > 0){
-		return s.hot
-	} else if (o.Temp == "frozen" &&
-		s.frozen.counter > 0){
-		return s.frozen
+	matchingShelf := s.overflow
+	switch o.Temp{
+		case "cold":
+			matchingShelf = s.cold
+		case "hot":
+			matchingShelf = s.hot
+		case "frozen":
+			matchingShelf = s.frozen
 	}
-	return s.dead
+	if (s.overflow.counter < 1 && matchingShelf.counter < 1){
+		// nowhere to place, must discard.
+		return s.dead
+	}
+	overflowDecayScore := o.computeDecayScore(s.overflow,
+					arrival_time)
+	matchingDecayScore := o.computeDecayScore(matchingShelf,
+				arrival_time)
+
+	if (overflowDecayScore > 0 && s.overflow.counter > 0){
+		// will survive overflow
+		return s.overflow
+	}
+	if (matchingDecayScore <= 0){
+		// will die no matter where we put it.
+		return s.dead
+	}
+	// TODO:
+	// add in check for swapping out critical orders
+	// if critical order found, compute 
+	// chance of saving. if saveable,  
+	if (matchingShelf.counter > 0){
+		/*
+		place in matching shelf - we're safe.
+		*/
+		o.DecayCritical = false
+		o.DecayScore = matchingDecayScore
+		return matchingShelf
+	}
+	// last resort:
+	// 	place in overflow and hope we can swap
+	// 	later.
+	o.DecayScore = overflowDecayScore
+	o.DecayCritical = true
+	return s.overflow
 }
 
 func dispatch(o *Order,  args *SimulatorConfig,
@@ -78,7 +99,7 @@ func dispatch(o *Order,  args *SimulatorConfig,
 		int(args.courier_upper_bound -
 		args.courier_lower_bound)) +
 		int(args.courier_lower_bound)
-	shelf := selectShelf(o,args.shelves)
+	shelf := selectShelf(o,args.shelves,arrival)
 	if shelf != args.shelves.dead {
 		wg.Add(1)
 		shelf_idx, err := shelf.decrementAndUpdate(o.Id)
@@ -109,7 +130,6 @@ func runQueue(args *SimulatorConfig){
 				break ioLoop
 			}
 		}
-
 	}
 	wg.Wait()
 	fmt.Println("complete")
@@ -152,7 +172,6 @@ func main(){
 	dispatch_err, err := os.Create("dispatch_err.log")
 	check(err)
 	defer courier_out.Close()
-	// END BLOCK
 	inputSource,err := os.Open("orders.json")
 	check(err)
 	defer inputSource.Close()
