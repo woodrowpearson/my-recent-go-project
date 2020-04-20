@@ -3,6 +3,7 @@ package simulator
 import (
 	"testing"
 	"math"
+	"fmt"
 )
 
 
@@ -42,23 +43,58 @@ func assertFloat32(t *testing.T, res float32, expected float32){
 }
 
 
-//func TestSwapWillPreserve(t *testing.T){
-//	/*
-//		Only two cases for this.
-//		1. swap WILL preserve it, so the new generated score must be updated.
-//		2. swap WONT preserve it. order is not updated, function returns false.
-//		Need to figure out a way to mock the times on this.
-//	*/
-//}
-//
-//func TestComputeDecayScore(t *testing.T){
-//	/*
-//		Three cases:
-//			1. zero shelf life
-//			2. B greater than A
-//			3. A greater than B
-//	*/
-//}
+func TestSwapWillPreserve(t *testing.T){
+	/*
+		Only two cases for this.
+		1. swap WILL preserve it, so the new generated score must be updated.
+		2. swap WONT preserve it. order is not updated, function returns false.
+		Need to figure out a way to mock the times on this.
+	*/
+
+}
+
+func TestComputeDecayScore(t *testing.T){
+	/*
+		Three cases:
+			1. zero shelf life
+			2. B greater than A
+			3. A greater than B
+	*/
+
+	order := Order{Id:"a",Name:"dummy",Temp:"hot",
+			ShelfLife:200,DecayRate:0.25}
+
+	t.Run("Returns zero when order shelf life is zero", 
+		func(t *testing.T){
+		order.ShelfLife = 0
+		res := order.computeDecayScore(1,1)
+		expected := float32(0)
+		assertFloat32(t, res, expected)
+	})
+
+	msg := `
+Returns a negative result when the decay rate, 
+modifier, and arrival time outweigh shelf life.
+`
+	t.Run(msg,func(t *testing.T){
+		order.ShelfLife = 10
+		res := order.computeDecayScore(2,1000)
+		expected := float32(-49)
+		assertFloat32(t,res,expected)
+	})
+
+
+	msg = `
+Returns a positive result when shelf life 
+outweighs decay factors.
+`
+	t.Run(msg, func(t *testing.T){
+		order.ShelfLife = 200
+		res := order.computeDecayScore(1,2)
+		expected := float32(0.9975)
+		assertFloat32(t,res,expected)
+	})
+}
 
 func TestSelectShelf(t *testing.T){
 	order := Order{Id:"a",Name:"dummy",Temp:"hot",

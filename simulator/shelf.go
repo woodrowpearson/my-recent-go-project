@@ -73,7 +73,7 @@ func(s *Shelf) selectCritical(overflow *Shelf) *Order{
 
 func(s *Shelf) duplicateContents(order *Order, with_order bool) map[string]*Order{
 	/*
-	 range expression is evaluated once, at the start,
+	 range expression is evaluated once, at the start.
 	 we're doing this to make a copy of the current shelf,
 	 so that we don't risk weirness in printing shelf contents
 	 based on the concurrent maps.
@@ -99,6 +99,7 @@ func(s *Shelf) swapAssessment(o *Order, overflow *Shelf){
 		remove it from criticals, assign it a new decay factor,
 		and run incrementAndUpdate on the overflow shelf.
 	*/
+	// TODO: Print to a logfile when a swap occurs.
 	if s != overflow && s.counter == 0{
 		to_swap := overflow.selectCritical(s)
 		if to_swap != nil{

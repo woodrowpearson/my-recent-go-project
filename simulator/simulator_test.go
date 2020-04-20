@@ -2,12 +2,23 @@ package simulator
 
 import "testing"
 
+func TestRunPrimary(t *testing.T){
+	/*
+		Single test case. needs to run an integration test
+		that sends data out to four channels.
+		When complete, all shelves should be empty.
+		NOTE that we need a successful shelf-swap to occur in this.
+
+	*/
+
+}
+
+
 func TestDispatch(t *testing.T){
 	/*
 		Two cases:
 			1. discarded due to dead shelf.
 			2. sent for courier due to available shelf.
-
 	*/
 
 

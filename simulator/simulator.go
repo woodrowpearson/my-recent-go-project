@@ -51,10 +51,13 @@ func dispatch(o *Order,  args *SimulatorConfig,
 	(a map maybe?) that will let us swap out
 	overflow + critical orders to a matching shelf.
 	*/
+
+	// TODO: move this to a method on the args struct so it can be mocked
 	arrival_seconds := rand.Intn(
 		int(args.courier_upper_bound -
 		args.courier_lower_bound)) +
 		int(args.courier_lower_bound)
+	// END BLOCK
 	shelf := o.selectShelf(args.shelves,arrival_seconds)
 	if shelf != args.shelves.dead {
 		wg.Add(1)

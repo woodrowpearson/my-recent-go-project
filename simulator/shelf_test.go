@@ -7,6 +7,7 @@ package simulator
 //			2. We have no eligible values to swap due to lack of criticals
 //			3. swapAssessment's caller shelf is an overflow shelf,
 //				so there's no freed up space.
+//		Blocked by: SelectCritical test
 //	*/
 //
 //}
@@ -18,6 +19,7 @@ package simulator
 //		Two cases:
 //			1. no eligible criticals
 //			2. eligible critical
+//		blocked by: SwapWillPreserve test
 //	*/
 //
 //}
