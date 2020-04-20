@@ -86,9 +86,10 @@ modifications to make:
 7. have main.go import from the package as a CLI client.
 8. narrative for woody.
 
-1. dispatching heuristic update
+1. dispatching heuristic update - DONE
 2. move computeDecayRate to a method on order - DONE
 3. add decayCriticality and decayScore to the computeDecayRate - DONE
+4. extend Snapshot to compute the new score on swap.
 4. WRITE TESTS
 
 

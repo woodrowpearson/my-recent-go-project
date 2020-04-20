@@ -16,77 +16,48 @@ func check(e error){
 	}
 }
 
-func courier(order *Order, shelf *Shelf, arrival_time int,
-		wg *sync.WaitGroup,shelf_idx int,
+func courier(order *Order, shelf *Shelf,overflow *Shelf,
+		arrival_time int,
+		wg *sync.WaitGroup,
 		courier_out io.Writer,courier_err io.Writer){
 	time.Sleep(time.Duration(1000*arrival_time)*time.Millisecond)
 	value := order.computeDecayScore(shelf,arrival_time)
-	shelf.incrementAndUpdate(shelf_idx)
+
 	/*
 	In Linux, thread safety is assured in file access:
 	https://stackoverflow.com/questions/29981050/concurrent-writing-to-a-file`
 	*/
-	if (order.DecayCritical){
-		fmt.Fprintf(courier_err,PickupErrMsg,order.Id,value,shelf.name,shelf.item_array)
+	if (order.IsCritical){
+		fmt.Fprintf(courier_err,PickupErrMsg,order.Id,value,shelf.name,shelf.contents)
 	} else {
-		fmt.Fprintf(courier_out,PickupSuccessMsg,order.Id,value,shelf.name,shelf.item_array)
+		fmt.Fprintf(courier_out,PickupSuccessMsg,order.Id,value,shelf.name,shelf.contents)
+	}
+	/*
+		 In the event that we're freeing up space on
+		a non-overflow shelf, we'll want to scan the overflow shelf's
+		criticals for the first item that will match the following criteria:
+		1) eligible for this shelf due to temperature match
+		2) will be saved from decay by moving to the current shelf
+		Once the item is found, we swap the item from the matching shelf,
+		remove it from criticals, assign it a new decay factor,
+		and run incrementAndUpdate on the overflow shelf.
+	*/
+	if shelf != overflow && shelf.counter == 0{
+		to_swap := overflow.selectCritical(shelf)
+		if to_swap != nil{
+			overflow.incrementAndUpdate(to_swap)
+			shelf.contents.Remove(order.Id)
+			shelf.contents.Set(to_swap.Id,to_swap)
+		} else {
+			shelf.incrementAndUpdate(order)
+		}
+	} else {
+		shelf.incrementAndUpdate(order)
 	}
 	wg.Done()
 }
 
 
-func selectShelf(o *Order,s *Shelves,arrival_time int) *Shelf {
-	/*
-	TODO: add in a criticality score for the order.
-	If the order is not safe for overflow, don't stick it 
-	in overflow unless matching shelf is empty.
-
-	*/
-	matchingShelf := s.overflow
-	switch o.Temp{
-		case "cold":
-			matchingShelf = s.cold
-		case "hot":
-			matchingShelf = s.hot
-		case "frozen":
-			matchingShelf = s.frozen
-	}
-	if (s.overflow.counter < 1 && matchingShelf.counter < 1){
-		// nowhere to place, must discard.
-		return s.dead
-	}
-	overflowDecayScore := o.computeDecayScore(s.overflow,
-					arrival_time)
-	matchingDecayScore := o.computeDecayScore(matchingShelf,
-				arrival_time)
-
-	if (overflowDecayScore > 0 && s.overflow.counter > 0){
-		// will survive overflow
-		return s.overflow
-	}
-	if (matchingDecayScore <= 0){
-		// will die no matter where we put it.
-		return s.dead
-	}
-	// TODO:
-	// add in check for swapping out critical orders
-	// if critical order found, compute 
-	// chance of saving. if saveable,  
-	if (matchingShelf.counter > 0){
-		/*
-		place in matching shelf - we're safe.
-		*/
-		o.DecayCritical = false
-		o.DecayScore = matchingDecayScore
-		return matchingShelf
-	}
-	// last resort:
-	// 	place in overflow and hope we can swap
-	// 	later.
-	o.DecayScore = overflowDecayScore
-	o.DecayCritical = true
-	return s.overflow
-}
 
 func dispatch(o *Order,  args *SimulatorConfig,
 	wg *sync.WaitGroup){
@@ -99,16 +70,13 @@ func dispatch(o *Order,  args *SimulatorConfig,
 		int(args.courier_upper_bound -
 		args.courier_lower_bound)) +
 		int(args.courier_lower_bound)
-	shelf := selectShelf(o,args.shelves,arrival)
+	shelf := o.selectShelf(args.shelves,arrival)
 	if shelf != args.shelves.dead {
 		wg.Add(1)
-		shelf_idx, err := shelf.decrementAndUpdate(o.Id)
-		check(err)
 		fmt.Fprintf(args.dispatch_out,DispatchSuccessMsg,
-			o.Id,shelf.name,shelf.item_array)
-		go courier(o,shelf,arrival,wg,shelf_idx,
+			o.Id,shelf.name,shelf.contents)
+		go courier(o,shelf,args.shelves.overflow,arrival,wg,
 			args.courier_out,args.courier_err)
-		check(err)
 	} else {
 		fmt.Fprintf(args.dispatch_err,
 			DispatchErrMsg,o.Id)
