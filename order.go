@@ -45,8 +45,9 @@ func(o *Order) swapWillPreserve(modifier uint) bool {
 		on_new_shelf = computeScore(new_modifier,arrival_time-current_time)
 		prospective_score = elapsed + on_new_shelf
 	*/
-//	currentTime := time.Now()
-//	initialTime := o.placementTime
+	currentTimeMS := time.Now().UnixNano()/int64(time.Millisecond)
+	initialTimeMS := o.placementTime.UnixNano()/int64(time.Millisecond)
+	arrivalTimeMS := o.arrivalTime.UnixNano()/int64(time.Millisecond)
 	/* TODO:
 		1. compute elapsed time in MS
 		2. compute prospective time in MS
@@ -54,16 +55,16 @@ func(o *Order) swapWillPreserve(modifier uint) bool {
 		4. compute prospective decay score
 	
 	*/
-//	elapsed := o.computeDecayScore(o.shelf.modifier,int(currentTimeMS - initialTimeMS))
-//	prospective := o.computeDecayScore(modifier, int(1000*o.arrival_time) - currentTimeMs)
-//	prospective_score = elapsed + prospective
-	prospective_score := float32(1)
-	if prospective_score > 0{
+	elapsedMS := int(currentTimeMS - initialTimeMS)
+	prospectiveMS := int(arrivalTimeMS - currentTimeMS)
+	elapsedScore := o.computeDecayScore(o.shelf.modifier,elapsedMS)
+	newShelfScore := o.computeDecayScore(modifier,prospectiveMS)
+	prospectiveScore := newShelfScore + elapsedScore
+	if prospectiveScore > 0{
 		o.IsCritical = false
-		o.DecayScore = prospective_score
+		o.DecayScore = prospectiveScore
 		return true
 	}
-
 	return false
 }
 

@@ -21,14 +21,11 @@ func getUnixTimestampMilliseconds() int64{
 }
 
 func courier(order *Order, shelf *Shelf,overflow *Shelf,
-//		arrival_time int,
 		wg *sync.WaitGroup,
 		courier_out io.Writer,courier_err io.Writer){
-//	time.Sleep(time.Duration(1000*arrival_time)*time.Millisecond)
 	time.After(time.Until(order.arrivalTime))
 	fmt.Printf("completed: ")
 	fmt.Println(time.Now().String())
-//	value := order.computeDecayScore(shelf,arrival_time)
 
 	/*
 	In Linux, thread safety is assured in file access:

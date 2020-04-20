@@ -94,7 +94,7 @@ modifications to make:
 
 ## Monday 4/20
 
-1. finish up swapWillSave() function
+1. finish up swapWillSave() function - DONE
 2. write tests against everything.
 3. be sure to check for race conditions on the map iteration - that was a nasty error.
 
