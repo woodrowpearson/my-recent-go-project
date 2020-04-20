@@ -99,6 +99,19 @@ modifications to make:
 3. write tests against everything.
 4. be sure to check for race conditions on the map iteration - that was a nasty error.
 
+Following tests needed:
+
+- logging output for the courier and dispatch functions
+- selectShelf: all paths
+- swapWillPreserve (for true and false)
+- incrementAndUpdate (isCritical vs not isCritical)
+- decrementAndUpdate (isCritical vs not isCritical)
+- selectCritical
+- streamFromSource
+- BuildConfig
+
+- testing for race conditions (how do we do that?)
+- benchmarking on integration test
 
 ### Notes
 
