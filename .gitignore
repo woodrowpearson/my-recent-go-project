@@ -1,3 +1,4 @@
 main
 hello
 *.log
+.idea/*
