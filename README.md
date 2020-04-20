@@ -1,7 +1,7 @@
 
 # Build
 
-go build main.go structures.go consts.go
+go build main.go io.go consts.go shelf.go order.go configs.go
 
 # test
 

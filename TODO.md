@@ -95,8 +95,9 @@ modifications to make:
 ## Monday 4/20
 
 1. finish up swapWillSave() function - DONE
-2. write tests against everything.
-3. be sure to check for race conditions on the map iteration - that was a nasty error.
+2. make it into a local package - DONE
+3. write tests against everything.
+4. be sure to check for race conditions on the map iteration - that was a nasty error.
 
 
 ### Notes

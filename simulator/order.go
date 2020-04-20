@@ -1,8 +1,8 @@
-package main
+package simulator
 
 import (
 	"time"
-	"fmt"
+//	"fmt"
 )
 
 type Order struct {
@@ -19,6 +19,7 @@ type Order struct {
 }
 
 func(o *Order) computeDecayScore(modifier uint,arrival_time int) float32{
+	// TODO: please fix up the type coercions, they're nasty
 	a := float32(o.ShelfLife)
 	b := o.DecayRate*float32(arrival_time)*float32(modifier)
 	if a == b {
@@ -44,17 +45,13 @@ func(o *Order) swapWillPreserve(modifier uint) bool {
 		elapsed = computeScore(o.shelf.modifier,current_time-initial_time)
 		on_new_shelf = computeScore(new_modifier,arrival_time-current_time)
 		prospective_score = elapsed + on_new_shelf
+
+		TODO: Please make the types stop using all this coercion and casting.
+		it's ugly
 	*/
 	currentTimeMS := time.Now().UnixNano()/int64(time.Millisecond)
 	initialTimeMS := o.placementTime.UnixNano()/int64(time.Millisecond)
 	arrivalTimeMS := o.arrivalTime.UnixNano()/int64(time.Millisecond)
-	/* TODO:
-		1. compute elapsed time in MS
-		2. compute prospective time in MS
-		3. compute elapsed decay score
-		4. compute prospective decay score
-	
-	*/
 	elapsedMS := int(currentTimeMS - initialTimeMS)
 	prospectiveMS := int(arrivalTimeMS - currentTimeMS)
 	elapsedScore := o.computeDecayScore(o.shelf.modifier,elapsedMS)
@@ -70,12 +67,7 @@ func(o *Order) swapWillPreserve(modifier uint) bool {
 
 func (o *Order) selectShelf(s *Shelves,arrival_delay int) *Shelf {
 	/*
-	TODO: add in a criticality score for the order.
-	If the order is not safe for overflow, don't stick it 
-	in overflow unless matching shelf is empty.
-
-	The initial timestamp for the order is set as soon
-	as the shelf is selected.
+	TODO: Add a narrative for this.
 
 	*/
 	matchingShelf := s.overflow
@@ -94,8 +86,6 @@ func (o *Order) selectShelf(s *Shelves,arrival_delay int) *Shelf {
 				arrival_delay)
 	o.placementTime = time.Now()
 	o.arrivalTime = o.placementTime.Add(time.Second*time.Duration(arrival_delay))
-	fmt.Printf("placement time: %s\n",o.placementTime.String())
-	fmt.Printf("arrival time: %s\n",o.arrivalTime.String())
 	if (s.overflow.counter < 1 && matchingShelf.counter < 1){
 		// nowhere to place, must discard.
 		o.shelf = s.dead
