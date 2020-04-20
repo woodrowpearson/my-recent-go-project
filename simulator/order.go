@@ -48,7 +48,6 @@ func(o *Order) swapWillPreserve(modifier uint, getNow timeFunc) bool {
 		TODO: Please make the types stop using all this coercion and casting.
 		it's ugly
 	*/
-	//currentTimeMS := time.Now().UnixNano()/int64(time.Millisecond)
 	currentTimeMS := getNow().UnixNano()/int64(time.Millisecond)
 	initialTimeMS := o.placementTime.UnixNano()/int64(time.Millisecond)
 	arrivalTimeMS := o.arrivalTime.UnixNano()/int64(time.Millisecond)

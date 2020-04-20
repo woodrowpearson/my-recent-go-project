@@ -27,12 +27,12 @@ func buildShelf(array_capacity uint, name string,
 	return shelf
 }
 
-func (s *Shelf) incrementAndUpdate(o *Order){
+func (s *Shelf) incrementAndUpdate(o *Order,remove_from_criticals bool){
 	/*
 		removes item from shelf
 	*/
 	s.contents.Remove(o.Id)
-	if o.IsCritical {
+	if remove_from_criticals {
 		s.criticals.Remove(o.Id)
 	}
 	atomic.AddInt32(&s.counter,1)
@@ -100,17 +100,21 @@ func(s *Shelf) swapAssessment(o *Order, overflow *Shelf,getNow timeFunc){
 		and run incrementAndUpdate on the overflow shelf.
 	*/
 	// TODO: Print to a logfile when a swap occurs.
-	if s != overflow && s.counter == 0{
-		to_swap := overflow.selectCritical(s,getNow)
+	if s != overflow {
+		to_swap := s.selectCritical(overflow,getNow)
 		if to_swap != nil{
-			overflow.incrementAndUpdate(to_swap)
+			overflow.incrementAndUpdate(to_swap,true)
 			s.contents.Remove(o.Id)
 			s.contents.Set(to_swap.Id,to_swap)
 		} else {
-			s.incrementAndUpdate(o)
+			/*
+				Any order not in overflow is categorically not critical.
+			*/
+			s.incrementAndUpdate(o,false)
 		}
 	} else {
-		s.incrementAndUpdate(o)
+		// We could be removing a critical order on overflow
+		s.incrementAndUpdate(o,o.IsCritical)
 	}
 }
 

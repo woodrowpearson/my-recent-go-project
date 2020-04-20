@@ -108,7 +108,8 @@ Following tests needed:
 - swapWillPreserve (for true and false) (need Mocks) - DONE
 - incrementAndUpdate (isCritical vs not isCritical)
 - decrementAndUpdate (isCritical vs not isCritical)
-- selectCritical
+- selectCritical - DONE
+- swapAssessment - DONE
 - streamFromSource
 - BuildConfig
 
