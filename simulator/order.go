@@ -17,17 +17,18 @@ type Order struct {
 	arrivalTime time.Time
 }
 
-func(o *Order) computeDecayScore(modifier uint,arrival_time int) float32{
+func(o *Order) computeDecayScore(modifier uint,arrival_time_ms int64) float32{
 	// TODO: please fix up the type coercions, they're nasty
 	a := float32(o.ShelfLife)
-	b := o.DecayRate*float32(arrival_time)*float32(modifier)
+	b := o.DecayRate*(float32(arrival_time_ms)/1000)*float32(modifier)
+	fmt.Println(b)
 	if a == b  || a == 0{
 		return 0
 	}
 	return (a-b)/a
 }
 
-func(o *Order) swapWillPreserve(modifier uint) bool {
+func(o *Order) swapWillPreserve(modifier uint, getNow timeFunc) bool {
 	/*
 		Needs to compute prospective decay score
 		based on current elapsed score + remaining elapsed score 
@@ -48,11 +49,12 @@ func(o *Order) swapWillPreserve(modifier uint) bool {
 		TODO: Please make the types stop using all this coercion and casting.
 		it's ugly
 	*/
-	currentTimeMS := time.Now().UnixNano()/int64(time.Millisecond)
+	//currentTimeMS := time.Now().UnixNano()/int64(time.Millisecond)
+	currentTimeMS := getNow().UnixNano()/int64(time.Millisecond)
 	initialTimeMS := o.placementTime.UnixNano()/int64(time.Millisecond)
 	arrivalTimeMS := o.arrivalTime.UnixNano()/int64(time.Millisecond)
-	elapsedMS := int(currentTimeMS - initialTimeMS)
-	prospectiveMS := int(arrivalTimeMS - currentTimeMS)
+	elapsedMS := currentTimeMS - initialTimeMS
+	prospectiveMS := arrivalTimeMS - currentTimeMS
 	elapsedScore := o.computeDecayScore(o.shelf.modifier,elapsedMS)
 	newShelfScore := o.computeDecayScore(modifier,prospectiveMS)
 	prospectiveScore := newShelfScore + elapsedScore
@@ -80,10 +82,11 @@ func (o *Order) selectShelf(s *Shelves,arrival_delay int) *Shelf {
 	}
 
 	overflowDecayScore := o.computeDecayScore(s.overflow.modifier,
-					arrival_delay)
+					int64(arrival_delay*1000))
 	matchingDecayScore := o.computeDecayScore(matchingShelf.modifier,
-				arrival_delay)
-	o.placementTime = time.Now()
+				int64(arrival_delay*1000))
+//	o.placementTime = time.Now()
+	o.placementTime = getTimeNow()
 	o.arrivalTime = o.placementTime.Add(time.Second*time.Duration(arrival_delay))
 	if (s.overflow.counter < 1 && matchingShelf.counter < 1){
 		// nowhere to place, must discard.

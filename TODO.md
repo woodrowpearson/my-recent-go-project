@@ -104,8 +104,8 @@ Following tests needed:
 
 - logging output for the courier and dispatch functions
 - selectShelf: all paths - DONE
-- computeDecayScore 
-- swapWillPreserve (for true and false) (need Mocks)
+- computeDecayScore  - DONE
+- swapWillPreserve (for true and false) (need Mocks) - DONE
 - incrementAndUpdate (isCritical vs not isCritical)
 - decrementAndUpdate (isCritical vs not isCritical)
 - selectCritical

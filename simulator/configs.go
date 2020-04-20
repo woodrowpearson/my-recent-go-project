@@ -6,6 +6,8 @@ import (
 	"errors"
 )
 
+type timeFunc func() time.Time
+
 // Helper struct for keeping argument lengths reasonable.
 type SimulatorConfig struct {
 	overflow_size uint

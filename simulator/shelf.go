@@ -3,6 +3,7 @@ package simulator
 import (
 	"sync/atomic"
 	"github.com/orcaman/concurrent-map"
+	"time"
 )
 
 
@@ -63,7 +64,7 @@ func(s *Shelf) selectCritical(overflow *Shelf) *Order{
 	*/
 	for _, ptr := range overflow.criticals.Items() {
 		order := castToOrder(ptr)
-		if s.name == order.shelf.name && order.swapWillPreserve(s.modifier){
+		if s.name == order.shelf.name && order.swapWillPreserve(s.modifier,time.Now){
 			return order
 		}
 	}
