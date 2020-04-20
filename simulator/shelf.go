@@ -3,7 +3,6 @@ package simulator
 import (
 	"sync/atomic"
 	"github.com/orcaman/concurrent-map"
-	"time"
 )
 
 
@@ -57,14 +56,14 @@ func castToOrder(blob interface{}) *Order{
 	}
 }
 
-func(s *Shelf) selectCritical(overflow *Shelf) *Order{
+func(s *Shelf) selectCritical(overflow *Shelf,getNow timeFunc) *Order{
 	/*
 		We need to do the casting because the concurrent map
 		only deals with interfaces.
 	*/
 	for _, ptr := range overflow.criticals.Items() {
 		order := castToOrder(ptr)
-		if s.name == order.shelf.name && order.swapWillPreserve(s.modifier,time.Now){
+		if s.name == order.Temp && order.swapWillPreserve(s.modifier,getNow){
 			return order
 		}
 	}
@@ -89,7 +88,7 @@ func(s *Shelf) duplicateContents(order *Order, with_order bool) map[string]*Orde
 	return contents
 }
 
-func(s *Shelf) swapAssessment(o *Order, overflow *Shelf){
+func(s *Shelf) swapAssessment(o *Order, overflow *Shelf,getNow timeFunc){
 	/*
 		 In the event that we're freeing up space on
 		a non-overflow shelf, we'll want to scan the overflow shelf's
@@ -102,7 +101,7 @@ func(s *Shelf) swapAssessment(o *Order, overflow *Shelf){
 	*/
 	// TODO: Print to a logfile when a swap occurs.
 	if s != overflow && s.counter == 0{
-		to_swap := overflow.selectCritical(s)
+		to_swap := overflow.selectCritical(s,getNow)
 		if to_swap != nil{
 			overflow.incrementAndUpdate(to_swap)
 			s.contents.Remove(o.Id)

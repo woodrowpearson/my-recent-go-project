@@ -2,53 +2,8 @@ package simulator
 
 import (
 	"testing"
-	"math"
-//	"fmt"
 	"time"
 )
-
-
-
-func mockTimeNow() time.Time{
-	location,err := time.LoadLocation("UTC")
-	check(err)
-	return time.Date(2020,1,0,0,0,0,0,location)
-}
-
-func assertBoolean(t *testing.T, res bool, expected bool){
-	t.Helper()
-	if res != expected{
-		t.Errorf("res: %t, expected: %t", res,expected)
-	}
-}
-
-func assertShelf(t *testing.T, res *Shelf, expected *Shelf){
-	t.Helper()
-	if res != expected{
-		t.Errorf("received %+v, expected %+v",res,expected)
-	}
-}
-
-func assertStrings(t *testing.T, res string, expected string){
-	t.Helper()
-	if res != expected{
-		t.Errorf("received %q, expected %q", res,expected)
-	}
-}
-
-func assertInt32(t *testing.T, res int32, expected int32){
-	t.Helper()
-	if res != expected{
-		t.Errorf("received %d, expected %d",res,expected)
-	}
-}
-func assertFloat32(t *testing.T, res float32, expected float32){
-	t.Helper()
-	almost_equal := math.Abs(float64(res)-float64(expected)) <= 1e-9
-	if !almost_equal{
-		t.Errorf("received %.3f, expected %.3f",res,expected)
-	}
-}
 
 
 func TestSwapWillPreserve(t *testing.T){
@@ -182,7 +137,7 @@ func TestSelectShelf(t *testing.T){
 	t.Run("returns dead if matchingScore and overflorScore are both less than zero",
 		func(t *testing.T){
 		order.ShelfLife = 0
-		res := order.selectShelf(&shelves,100)
+		res := order.selectShelf(&shelves,100,mockTimeNow)
 		expected := dead
 		assertShelf(t,res,expected)
 	})
@@ -192,7 +147,7 @@ func TestSelectShelf(t *testing.T){
 		order.ShelfLife = 200
 		overflow.counter = 0
 		hot.counter = 0
-		res := order.selectShelf(&shelves,100)
+		res := order.selectShelf(&shelves,100,mockTimeNow)
 		expected := dead
 		assertShelf(t,res,expected)
 
@@ -208,7 +163,7 @@ and that its decay score is set.
 		overflow.counter = 1
 		order.ShelfLife = 200
 		overflow.modifier = 2
-		res := order.selectShelf(&shelves,2)
+		res := order.selectShelf(&shelves,2,mockTimeNow)
 		expected := overflow
 		expected_overflow_counter := int32(0)
 		expected_decay_score := order.computeDecayScore(overflow.modifier,2*1000)
@@ -227,7 +182,7 @@ and that its decay score is set.
 		hot.counter = 1
 		overflow.modifier = 2
 		hot.modifier = 1
-		res := order.selectShelf(&shelves,2)
+		res := order.selectShelf(&shelves,2,mockTimeNow)
 		expected := hot
 		expected_hot_counter := int32(0)
 		expected_decay_score := order.computeDecayScore(hot.modifier,2*1000)
@@ -248,7 +203,7 @@ and that its shelf is set to overflow.
 		hot.counter = 0
 		overflow.modifier = 1000
 		hot.modifier = 0
-		res := order.selectShelf(&shelves,1000)
+		res := order.selectShelf(&shelves,1000,mockTimeNow)
 		expected := overflow
 		expected_overflow_counter := int32(0)
 		expected_decay_score := order.computeDecayScore(overflow.modifier,1000*1000)

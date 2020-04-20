@@ -19,7 +19,8 @@ func check(e error){
 
 func courier(order *Order, shelf *Shelf,overflow *Shelf,
 		wg *sync.WaitGroup,
-		courier_out io.Writer,courier_err io.Writer){
+		courier_out io.Writer,
+		courier_err io.Writer,getNow timeFunc){
 	time.Sleep(time.Until(order.arrivalTime))
 
 	contents := shelf.duplicateContents(order,false)
@@ -38,7 +39,7 @@ func courier(order *Order, shelf *Shelf,overflow *Shelf,
 	 Determine if we can move an at-risk order from the overflow shelf
 	in order to prevent it from decaying before pickup
 	*/
-	shelf.swapAssessment(order,overflow)
+	shelf.swapAssessment(order,overflow,getNow)
 	wg.Done()
 }
 
@@ -58,14 +59,14 @@ func dispatch(o *Order,  args *SimulatorConfig,
 		args.courier_lower_bound)) +
 		int(args.courier_lower_bound)
 	// END BLOCK
-	shelf := o.selectShelf(args.shelves,arrival_seconds)
+	shelf := o.selectShelf(args.shelves,arrival_seconds,args.getNow)
 	if shelf != args.shelves.dead {
 		wg.Add(1)
 		contents := shelf.duplicateContents(o,true)
 		fmt.Fprintf(args.dispatch_out,DispatchSuccessMsg,
 			o.Id,shelf.name,contents)
 		go courier(o,shelf,args.shelves.overflow,wg,
-			args.courier_out,args.courier_err)
+			args.courier_out,args.courier_err,args.getNow)
 	} else {
 		fmt.Fprintf(args.dispatch_err,
 			DispatchErrMsg,o.Id)

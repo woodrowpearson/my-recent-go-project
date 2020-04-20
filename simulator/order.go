@@ -21,7 +21,6 @@ func(o *Order) computeDecayScore(modifier uint,arrival_time_ms int64) float32{
 	// TODO: please fix up the type coercions, they're nasty
 	a := float32(o.ShelfLife)
 	b := o.DecayRate*(float32(arrival_time_ms)/1000)*float32(modifier)
-	fmt.Println(b)
 	if a == b  || a == 0{
 		return 0
 	}
@@ -66,7 +65,7 @@ func(o *Order) swapWillPreserve(modifier uint, getNow timeFunc) bool {
 	return false
 }
 
-func (o *Order) selectShelf(s *Shelves,arrival_delay int) *Shelf {
+func (o *Order) selectShelf(s *Shelves,arrival_delay int,getNow timeFunc) *Shelf {
 	/*
 	TODO: Add a narrative for this.
 
@@ -86,7 +85,7 @@ func (o *Order) selectShelf(s *Shelves,arrival_delay int) *Shelf {
 	matchingDecayScore := o.computeDecayScore(matchingShelf.modifier,
 				int64(arrival_delay*1000))
 //	o.placementTime = time.Now()
-	o.placementTime = getTimeNow()
+	o.placementTime = getNow()
 	o.arrivalTime = o.placementTime.Add(time.Second*time.Duration(arrival_delay))
 	if (s.overflow.counter < 1 && matchingShelf.counter < 1){
 		// nowhere to place, must discard.

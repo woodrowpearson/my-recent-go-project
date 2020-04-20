@@ -30,6 +30,7 @@ type SimulatorConfig struct {
 	// refers to the value of a second
 	second_value time.Duration
 	shelves *Shelves
+	getNow timeFunc
 }
 
 // Allows config to be built from code by other projects,
@@ -79,6 +80,7 @@ func BuildConfig (overflow_size,hot_size,
 		inputSource:inputSource,
 		second_value: second_value,
 		shelves: &shelves,
+		getNow: time.Now,
 	}
 	return &config,nil
 }
