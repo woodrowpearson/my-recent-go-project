@@ -1,134 +1,81 @@
-// Copyright 2010 The Go Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
-package jsonrpc
+package main
 
 import (
-	"encoding/json"
-	"errors"
-	"io"
-	"net/rpc"
-	"sync"
+	"flag"
+	"fmt"
+	"log"
+	"net/http"
+	"os"
+	"time"
+
+	"golang.org/x/net/trace"
+	"golang.org/x/net/websocket"
 )
 
-var errMissingParams = errors.New("jsonrpc: request body missing params")
+var (
+	port = flag.Int("port", 8000, "The server port")
+)
 
-type serverCodec struct {
-	dec *json.Decoder // for reading JSON values
-	enc *json.Encoder // for writing JSON values
-	c   io.Closer
 
-	// temporary work space
-	req serverRequest
+Redundant said order existed
+//type Order struct {
+	// The fields of this struct must be exported so that the json module will be
+	// able to write into them. Therefore we need field tags to specify the names
+	// by which these fields go in the JSON representation of events.
+//	id str `json:"id"`
+///	name str `json:"name"`
+//	temp str `json:"temp"`
+//	shelfLife uint32 `json:"shelfLife"`
+//	decayRate float32 `json:"decayRate"`
+//}
 
-	// JSON-RPC clients can use arbitrary json values as request IDs.
-	// Package rpc expects uint64 request IDs.
-	// We assign uint64 sequence numbers to incoming requests
-	// but save the original request ID in the pending map.
-	// When rpc responds, we use the sequence number in
-	// the response to find the original request ID.
-	mutex   sync.Mutex // protects seq, pending
-	seq     uint64
-	pending map[uint64]*json.RawMessage
-}
-
-// NewServerCodec returns a new rpc.ServerCodec using JSON-RPC on conn.
-func NewServerCodec(conn io.ReadWriteCloser) rpc.ServerCodec {
-	return &serverCodec{
-		dec:     json.NewDecoder(conn),
-		enc:     json.NewEncoder(conn),
-		c:       conn,
-		pending: make(map[uint64]*json.RawMessage),
+// handleWebsocketOrderRequest handles the message arriving on connection ws
+// from the CLI or is will it be the client? or the CLI is invoking from CLI?
+func handleWebsocketOrderRequest(ws *websocket.Conn, e Event) error {
+	// Send the event as JSON
+	err := websocket.JSON.Send(ws, e)
+	if err != nil {
+		return fmt.Errorf("Can't send: %s", err.Error())
 	}
-}
-
-type serverRequest struct {
-	Method string           `json:"method"`
-	Params *json.RawMessage `json:"params"`
-	Id     *json.RawMessage `json:"id"`
-}
-
-func (r *serverRequest) reset() {
-	r.Method = ""
-	r.Params = nil
-	r.Id = nil
-}
-
-type serverResponse struct {
-	Id     *json.RawMessage `json:"id"`
-	Result interface{}      `json:"result"`
-	Error  interface{}      `json:"error"`
-}
-
-func (c *serverCodec) ReadRequestHeader(r *rpc.Request) error {
-	c.req.reset()
-	if err := c.dec.Decode(&c.req); err != nil {
-		return err
-	}
-	r.ServiceMethod = c.req.Method
-
-	// JSON request id can be any JSON value;
-	// RPC package expects uint64.  Translate to
-	// internal uint64 and save JSON on the side.
-	c.mutex.Lock()
-	c.seq++
-	c.pending[c.seq] = c.req.Id
-	c.req.Id = nil
-	r.Seq = c.seq
-	c.mutex.Unlock()
-
 	return nil
 }
 
-func (c *serverCodec) ReadRequestBody(x interface{}) error {
-	if x == nil {
-		return nil
+// websocketServerConnection handles the ws connection as long as orders are coming
+func websocketServerConnection(ws *websocket.Conn) {
+	log.Printf("Client connected from %s", ws.RemoteAddr())
+	for {
+		var order Order
+		err := websocket.JSON.Receive(ws, &order)
+		if err != nil {
+			log.Printf("Receive failed: %s; closing connection...", err.Error())
+			if err = ws.Close(); err != nil {
+				log.Println("Error closing connection:", err.Error())
+			}
+			break
+		} else {
+			if err := handleWebsocketOrderRequest(ws, order); err != nil {
+				log.Println(err.Error())
+				break
+			}
+		}
 	}
-	if c.req.Params == nil {
-		return errMissingParams
-	}
-	// JSON params is array value.
-	// RPC params is struct.
-	// Unmarshal into array containing struct for now.
-	// Should think about making RPC more general.
-	var params [1]interface{}
-	params[0] = x
-	return json.Unmarshal(*c.req.Params, &params)
 }
 
-var null = json.RawMessage([]byte("null"))
-
-func (c *serverCodec) WriteResponse(r *rpc.Response, x interface{}) error {
-	c.mutex.Lock()
-	b, ok := c.pending[r.Seq]
-	if !ok {
-		c.mutex.Unlock()
-		return errors.New("invalid sequence number in response")
+// websocketClientConnection handles the single websocket time connection - ws.
+func websocketClientConnection(ws *websocket.Conn) {
+	for range time.Tick(2 * time.Second) {
+		// Once every 2 seconds, send two json objects (as a string).
+		websocket.Message.Send(ws, os.Open("orders.json"))
 	}
-	delete(c.pending, r.Seq)
-	c.mutex.Unlock()
-
-	if b == nil {
-		// Invalid request so no id. Use JSON null.
-		b = &null
-	}
-	resp := serverResponse{Id: b}
-	if r.Error == "" {
-		resp.Result = x
-	} else {
-		resp.Error = r.Error
-	}
-	return c.enc.Encode(resp)
 }
 
-func (c *serverCodec) Close() error {
-	return c.c.Close()
-}
+func main() {
+	flag.Parse()
+	// Set up websocket servers and static file server. In addition, we're using
+	// net/trace for debugging - it will be available at /debug/requests.
+	http.Handle("/wsserver", websocket.Handler(websocketServerConnection))
+	http.Handle("/wsclient", websocket.Handler(websocketClientConnection))
 
-// ServeConn runs the JSON-RPC server on a single connection.
-// ServeConn blocks, serving the connection until the client hangs up.
-// The caller typically invokes ServeConn in a go statement.
-func ServeConn(conn io.ReadWriteCloser) {
-	rpc.ServeCodec(NewServerCodec(conn))
+	log.Printf("Server listening on port %d", *port)
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", *port), nil))
 }
