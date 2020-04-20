@@ -15,3 +15,4 @@ go test -bench=.
 - (go 1.14)
 - sudo snap install go --classic
 - go get "github.com/orcaman/concurrent-map"
+- go build main.go
