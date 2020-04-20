@@ -38,7 +38,6 @@ func streamFromSource(inputSource io.Reader, resultChannel chan Order, args *Sim
 		var o Order
 		err := dec.Decode(&o)
 		check(err)
-		fmt.Printf("generated blob: %+v\n",o)
 		resultChannel <- o
 		ct += 1
 		if ct == args.orders_per_second {

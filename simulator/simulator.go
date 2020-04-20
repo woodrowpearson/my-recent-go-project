@@ -19,14 +19,12 @@ func check(e error){
 func courier(order *Order, shelf *Shelf,overflow *Shelf,
 		wg *sync.WaitGroup,
 		courier_out io.Writer,courier_err io.Writer){
-	time.After(time.Until(order.arrivalTime))
-	fmt.Printf("completed: ")
-	fmt.Println(time.Now().String())
+	time.Sleep(time.Until(order.arrivalTime))
 
-	/*
-	In Linux, thread safety is assured in file access:
-	https://stackoverflow.com/questions/29981050/concurrent-writing-to-a-file`
-	*/
+	// range expression is evaluated once, at the start,
+	// we're doing this to make a copy of the current shelf,
+	// so that we don't risk weirness in printing shelf contents
+	// based on the concurrent maps.
 	contents := make(map[string]*Order)
 	for _,v := range shelf.contents.Items(){
 		o := castToOrder(v)
@@ -34,6 +32,10 @@ func courier(order *Order, shelf *Shelf,overflow *Shelf,
 			contents[o.Id] = o
 		}
 	}
+	/*
+	In Linux, thread safety is assured in file access:
+	https://stackoverflow.com/questions/29981050/concurrent-writing-to-a-file`
+	*/
 	if (order.IsCritical){
 		fmt.Fprintf(courier_err,PickupErrMsg,order.Id,order.DecayScore,
 			shelf.name,contents)
