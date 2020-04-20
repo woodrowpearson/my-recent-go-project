@@ -11,6 +11,9 @@ import (
 	"sync"
 	"math/rand"
 	"bufio"
+	"errors"
+	"net/rpc"
+	"sync"
 //	"github.com/francoispqt/gojay"
 )
 
@@ -91,8 +94,8 @@ func runQueue(args *SimulatorConfig){
 		/*
 			TODO: before dispatching, sort the items
 			by criticality (i.e. longest arrival time)
-			We'll want to compute the score for the order 
-			at instantiation. 
+			We'll want to compute the score for the order
+			at instantiation.
 			TODO: find an equivalent of python's bisect
 			function for inserting into the array in a sorted manner
 			TODO: MAKE THE CRITICALITY SORT A SEPARATE FUNCTION AND TEST IT
