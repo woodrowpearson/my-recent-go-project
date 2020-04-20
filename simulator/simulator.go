@@ -27,12 +27,19 @@ func courier(order *Order, shelf *Shelf,overflow *Shelf,
 	In Linux, thread safety is assured in file access:
 	https://stackoverflow.com/questions/29981050/concurrent-writing-to-a-file`
 	*/
+	contents := make(map[string]*Order)
+	for _,v := range shelf.contents.Items(){
+		o := castToOrder(v)
+		if o.Id != order.Id {
+			contents[o.Id] = o
+		}
+	}
 	if (order.IsCritical){
 		fmt.Fprintf(courier_err,PickupErrMsg,order.Id,order.DecayScore,
-			shelf.name,shelf.contents)
+			shelf.name,contents)
 	} else {
 		fmt.Fprintf(courier_out,PickupSuccessMsg,order.Id,
-			order.DecayScore,shelf.name,shelf.contents)
+			order.DecayScore,shelf.name,contents)
 	}
 	/*
 		 In the event that we're freeing up space on
@@ -75,8 +82,13 @@ func dispatch(o *Order,  args *SimulatorConfig,
 	shelf := o.selectShelf(args.shelves,arrival_seconds)
 	if shelf != args.shelves.dead {
 		wg.Add(1)
+		contents := make(map[string]*Order)
+		for _,v := range shelf.contents.Items(){
+			o := castToOrder(v)
+			contents[o.Id] = o
+		}
 		fmt.Fprintf(args.dispatch_out,DispatchSuccessMsg,
-			o.Id,shelf.name,shelf.contents)
+			o.Id,shelf.name,contents)
 		go courier(o,shelf,args.shelves.overflow,wg,
 			args.courier_out,args.courier_err)
 	} else {
