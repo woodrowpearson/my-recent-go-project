@@ -8,6 +8,7 @@ import (
 	"os"
 	"sync"
 	"math/rand"
+//	"github.com/francoispqt/gojay"
 )
 
 func check(e error){
@@ -58,10 +59,9 @@ func courier(order *Order, shelf *Shelf,overflow *Shelf,
 }
 
 
-
 func dispatch(o *Order,  args *SimulatorConfig,
 	wg *sync.WaitGroup){
-	/* 
+	/*
 	TODO: get a concurrent structure in here
 	(a map maybe?) that will let us swap out
 	overflow + critical orders to a matching shelf.
@@ -94,6 +94,36 @@ func runQueue(args *SimulatorConfig){
 		case v,ok := <-resultChannel:
 			if ok {
 				dispatch(&v,args,&wg)
+	criticality_arr := make([]Order, args.orders_per_second)
+	for i := uint(0); i < arrlen; i += args.orders_per_second {
+		/*
+			TODO: before dispatching, sort the items
+			by criticality (i.e. longest arrival time)
+			We'll want to compute the score for the order
+			at instantiation.
+			TODO: find an equivalent of python's bisect
+			function for inserting into the array in a sorted manner
+			TODO: MAKE THE CRITICALITY SORT A SEPARATE FUNCTION AND TEST IT
+			NOTE: the problem with sorting by criticality here is
+			that it makes our loop n^2 instead of o(n), since we iterate over
+			each item twice effectively.
+		*/
+		for j := uint(0); j < args.orders_per_second && i+j < arrlen; j++ {
+			order := orders[i+j]
+			shelf_idx := -1
+			arrival := rand.Intn(
+				int(args.courier_upper_bound -
+				args.courier_lower_bound)) +
+				int(args.courier_lower_bound)
+			shelf := selectShelf(&order,args.shelves)
+			// TODO: MOVE THIS TO OUTSIDE OF THE J LOOP.
+			if (shelf != args.shelves.dead){
+				wg.Add(1)
+				shelf_idx,err = shelf.decrementAndUpdate(order.Id)
+				check(err)
+				fmt.Fprintf(args.dispatch_out,DispatchSuccessMsg, order.Id,
+					shelf.name, shelf.item_array)
+				go courier(order,shelf,arrival,&wg,shelf_idx,args.courier_out,args.courier_err)
 			} else {
 				break ioLoop
 			}
