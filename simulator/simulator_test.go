@@ -1,10 +1,29 @@
 package simulator
 
+import "testing"
+
+func TestDispatch(t *testing.T){
+	/*
+		Two cases:
+			1. discarded due to dead shelf.
+			2. sent for courier due to available shelf.
+
+	*/
 
 
+}
 
 
 //func TestCourier(t *testing.T){
+//
+//	/*
+//		Two cases:
+//			1. order arrives and is critical
+//			2. order arrives and is not critical.
+//		Tests for state changes are on TestSwapAssessment
+//	*/
+//
+//
 //	t.Run("happy path. successful pickup", func(t *testing.T){
 //		var wg sync.WaitGroup
 //		wg.Add(1)

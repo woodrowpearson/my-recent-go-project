@@ -71,6 +71,48 @@ func(s *Shelf) selectCritical(overflow *Shelf) *Order{
 	return nil
 }
 
+func(s *Shelf) duplicateContents(order *Order, with_order bool) map[string]*Order{
+	/*
+	 range expression is evaluated once, at the start,
+	 we're doing this to make a copy of the current shelf,
+	 so that we don't risk weirness in printing shelf contents
+	 based on the concurrent maps.
+	*/
+	contents := make(map[string]*Order)
+	for _,v := range s.contents.Items(){
+		o := castToOrder(v)
+		if with_order || (o.Id != order.Id){
+			contents[o.Id] = o
+		}
+	}
+	return contents
+}
+
+func(s *Shelf) swapAssessment(o *Order, overflow *Shelf){
+	/*
+		 In the event that we're freeing up space on
+		a non-overflow shelf, we'll want to scan the overflow shelf's
+		criticals for the first item that will match the following criteria:
+		1) eligible for this shelf due to temperature match
+		2) will be saved from decay by moving to the current shelf
+		Once the item is found, we swap the item from the matching shelf,
+		remove it from criticals, assign it a new decay factor,
+		and run incrementAndUpdate on the overflow shelf.
+	*/
+	if s != overflow && s.counter == 0{
+		to_swap := overflow.selectCritical(s)
+		if to_swap != nil{
+			overflow.incrementAndUpdate(to_swap)
+			s.contents.Remove(o.Id)
+			s.contents.Set(to_swap.Id,to_swap)
+		} else {
+			s.incrementAndUpdate(o)
+		}
+	} else {
+		s.incrementAndUpdate(o)
+	}
+}
+
 // Helper struct for keeping argument lengths reasonable.
 type Shelves struct{
 	overflow *Shelf

@@ -16,22 +16,13 @@ func check(e error){
 }
 
 
+
 func courier(order *Order, shelf *Shelf,overflow *Shelf,
 		wg *sync.WaitGroup,
 		courier_out io.Writer,courier_err io.Writer){
 	time.Sleep(time.Until(order.arrivalTime))
 
-	// range expression is evaluated once, at the start,
-	// we're doing this to make a copy of the current shelf,
-	// so that we don't risk weirness in printing shelf contents
-	// based on the concurrent maps.
-	contents := make(map[string]*Order)
-	for _,v := range shelf.contents.Items(){
-		o := castToOrder(v)
-		if o.Id != order.Id {
-			contents[o.Id] = o
-		}
-	}
+	contents := shelf.duplicateContents(order,false)
 	/*
 	In Linux, thread safety is assured in file access:
 	https://stackoverflow.com/questions/29981050/concurrent-writing-to-a-file`
@@ -44,27 +35,10 @@ func courier(order *Order, shelf *Shelf,overflow *Shelf,
 			order.DecayScore,shelf.name,contents)
 	}
 	/*
-		 In the event that we're freeing up space on
-		a non-overflow shelf, we'll want to scan the overflow shelf's
-		criticals for the first item that will match the following criteria:
-		1) eligible for this shelf due to temperature match
-		2) will be saved from decay by moving to the current shelf
-		Once the item is found, we swap the item from the matching shelf,
-		remove it from criticals, assign it a new decay factor,
-		and run incrementAndUpdate on the overflow shelf.
+	 Determine if we can move an at-risk order from the overflow shelf
+	in order to prevent it from decaying before pickup
 	*/
-	if shelf != overflow && shelf.counter == 0{
-		to_swap := overflow.selectCritical(shelf)
-		if to_swap != nil{
-			overflow.incrementAndUpdate(to_swap)
-			shelf.contents.Remove(order.Id)
-			shelf.contents.Set(to_swap.Id,to_swap)
-		} else {
-			shelf.incrementAndUpdate(order)
-		}
-	} else {
-		shelf.incrementAndUpdate(order)
-	}
+	shelf.swapAssessment(order,overflow)
 	wg.Done()
 }
 
@@ -84,11 +58,7 @@ func dispatch(o *Order,  args *SimulatorConfig,
 	shelf := o.selectShelf(args.shelves,arrival_seconds)
 	if shelf != args.shelves.dead {
 		wg.Add(1)
-		contents := make(map[string]*Order)
-		for _,v := range shelf.contents.Items(){
-			o := castToOrder(v)
-			contents[o.Id] = o
-		}
+		contents := shelf.duplicateContents(o,true)
 		fmt.Fprintf(args.dispatch_out,DispatchSuccessMsg,
 			o.Id,shelf.name,contents)
 		go courier(o,shelf,args.shelves.overflow,wg,
