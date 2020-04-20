@@ -15,3 +15,4 @@ go test -bench=.
 (go 1.14)
 sudo snap install go --classic
 go get github.com/francoispqt/gojay
+go get github.com/gorilla/websocket

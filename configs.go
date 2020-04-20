@@ -23,6 +23,7 @@ type SimulatorConfig struct {
 	courier_err io.Writer
 	dispatch_out io.Writer
 	dispatch_err io.Writer
+	inputSource io.Reader
 	// normally it's 1, but for tests we'll want it at 0.
 	// refers to the value of a second
 	second_value time.Duration
@@ -38,6 +39,7 @@ func BuildConfig (overflow_size,hot_size,
 		overflow_modifier,cold_modifier,hot_modifier,
 		frozen_modifier uint,courier_out,courier_err,
 		dispatch_out,dispatch_err io.Writer,
+		inputSource io.Reader,
 		second_value time.Duration)(*SimulatorConfig, error){
 	if (courier_lower_bound > courier_upper_bound ||
 		courier_lower_bound < 1 ||
@@ -72,7 +74,8 @@ func BuildConfig (overflow_size,hot_size,
 		courier_err:courier_err,
 		dispatch_out:dispatch_out,
 		dispatch_err:dispatch_err,
-		second_value: 1000,
+		inputSource:inputSource,
+		second_value: second_value,
 		shelves: &shelves,
 	}
 	return &config,nil

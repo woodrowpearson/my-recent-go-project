@@ -75,16 +75,21 @@ modifications to make:
 ## Sunday 4/19
 
 1. make JSON stream from a file - DONE
-2. make JSON stream push to a channel, on a timer
-3. rework main loop to ingest in blocks based on a Wait
+2. make JSON stream push to a channel, on a timer - DONE
+3. rework main loop to ingest in blocks based on a Wait - DONE
 
 1. add in goroutine pool
-2. add in streaming json ingestion
+2. add in streaming json ingestion - DONE
 3. dispatching heuristic
 5. unit tests for all remaining cases incl concurrency
 6. move to a package
 7. have main.go import from the package as a CLI client.
 8. narrative for woody.
+
+1. dispatching heuristic update
+2. move computeDecayRate to a method on order
+3. add decayCriticality and decayScore to the computeDecayRate
+4. WRITE TESTS
 
 
 ### Notes
