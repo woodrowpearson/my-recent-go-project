@@ -78,5 +78,4 @@ func main(){
 	}
 	fmt.Printf("Configuration: %+v\n", args)
 	simulator.Run(args)
-//	runQueue(args)
 }
