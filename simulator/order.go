@@ -2,7 +2,6 @@ package simulator
 
 import (
 	"time"
-//	"fmt"
 )
 
 type Order struct {
@@ -22,7 +21,7 @@ func(o *Order) computeDecayScore(modifier uint,arrival_time int) float32{
 	// TODO: please fix up the type coercions, they're nasty
 	a := float32(o.ShelfLife)
 	b := o.DecayRate*float32(arrival_time)*float32(modifier)
-	if a == b {
+	if a == b  || a == 0{
 		return 0
 	}
 	return (a-b)/a

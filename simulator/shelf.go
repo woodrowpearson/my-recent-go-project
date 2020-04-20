@@ -61,12 +61,6 @@ func(s *Shelf) selectCritical(overflow *Shelf) *Order{
 		We need to do the casting because the concurrent map
 		only deals with interfaces.
 	*/
-	/*
-		 TODO: THE BUG IS HERE. There is some issue with 
-		iterating over the map while doing edits on the map.
-		error message is 
-		"go fatal error concurrent map iteration and map write"
-	*/
 	for _, ptr := range overflow.criticals.Items() {
 		order := castToOrder(ptr)
 		if s.name == order.shelf.name && order.swapWillPreserve(s.modifier){

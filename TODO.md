@@ -98,12 +98,14 @@ modifications to make:
 2. make it into a local package - DONE
 3. write tests against everything.
 4. be sure to check for race conditions on the map iteration - that was a nasty error.
+5. make everything but SimulatorConfig, BuildConfig, and RunSimulator private
 
 Following tests needed:
 
 - logging output for the courier and dispatch functions
-- selectShelf: all paths
-- swapWillPreserve (for true and false)
+- selectShelf: all paths - DONE
+- computeDecayScore 
+- swapWillPreserve (for true and false) (need Mocks)
 - incrementAndUpdate (isCritical vs not isCritical)
 - decrementAndUpdate (isCritical vs not isCritical)
 - selectCritical
