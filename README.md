@@ -12,7 +12,6 @@ go test -bench=.
 
 ## installation of shit
 
-(go 1.14)
-sudo snap install go --classic
-go get github.com/francoispqt/gojay
-go get github.com/gorilla/websocket
+- (go 1.14)
+- sudo snap install go --classic
+- go get "github.com/orcaman/concurrent-map"
