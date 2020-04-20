@@ -4,11 +4,22 @@ import (
 	"flag"
 	"fmt"
 	"time"
+	"bufio"
+	"encoding/json"
+	"errors"
+	"flag"
+	"log"
+
+	//	"flag"
 	"io"
-	"os"
-	"sync"
+	"io/ioutil"
 	"math/rand"
 //	"github.com/francoispqt/gojay"
+	"golang.org/x/net/websocket"
+	"os"
+	"sync"
+	"time"
+	//	"github.com/francoispqt/gojay"
 )
 
 func check(e error){
@@ -20,6 +31,20 @@ func check(e error){
 func courier(order *Order, shelf *Shelf,overflow *Shelf,
 		arrival_time int,
 		wg *sync.WaitGroup,
+
+func computeDecayStatus(order *Order,shelf *Shelf, arrival_time int) float32{
+	a := float32(order.ShelfLife)
+	b := order.DecayRate*float32(arrival_time)*float32(shelf.modifier)
+	if a <= b {
+		return a
+	}
+	value := (a-b)/a
+	return value
+}
+
+
+func courier(order Order, shelf *Shelf, arrival_time int,
+		wg *sync.WaitGroup,shelf_idx int,
 		courier_out io.Writer,courier_err io.Writer){
 	time.Sleep(time.Duration(1000*arrival_time)*time.Millisecond)
 	value := order.computeDecayScore(shelf,arrival_time)
@@ -52,6 +77,8 @@ func courier(order *Order, shelf *Shelf,overflow *Shelf,
 		} else {
 			shelf.incrementAndUpdate(order)
 		}
+	if value <= 0 {
+		fmt.Fprintf(courier_err,PickupErrMsg,order.Id,value,shelf.name,shelf.item_array
 	} else {
 		shelf.incrementAndUpdate(order)
 	}
@@ -80,6 +107,17 @@ func dispatch(o *Order,  args *SimulatorConfig,
 	} else {
 		fmt.Fprintf(args.dispatch_err,
 			DispatchErrMsg,o.Id)
+
+func selectShelf(o *Order,s *Shelves) *Shelf {
+	if s.overflow.counter > 0 {
+		return s.overflow
+	} else if o.Temp == "cold" && s.cold.counter > 0 {
+		return s.cold
+	} else if o.Temp == "hot" && s.hot.counter > 0 {
+		return s.hot
+	} else if o.Temp == "frozen" &&
+			s.frozen.counter > 0 {
+		return s.frozen
 	}
 }
 
@@ -117,7 +155,7 @@ func runQueue(args *SimulatorConfig){
 				int(args.courier_lower_bound)
 			shelf := selectShelf(&order,args.shelves)
 			// TODO: MOVE THIS TO OUTSIDE OF THE J LOOP.
-			if (shelf != args.shelves.dead){
+			if shelf != args.shelves.dead {
 				wg.Add(1)
 				shelf_idx,err = shelf.decrementAndUpdate(order.Id)
 				check(err)
@@ -139,6 +177,45 @@ func main(){
 		TODO: clean up style stuff. I dont know what the rules
 		are for formatting and camelcase vs snakecase.
 	*/
+	var (
+		// Port number where the server listens
+		serverport = flag.Int("serverport", 8000, "The server port")
+	)
+
+	type Order struct {
+		id str `json:"id"`
+		name str `json:"name"`
+		temp str `json:"temp"`
+		shelfLife uint32 `json:"shelfLife"`
+		decayRate float32 `json:"decayRate"`
+	}
+
+	var base_addr = "ws://localhost"
+	var origin = "http://localhost"
+
+	// checkWSorder checks that the WebSocket order server route functions correctly.
+	func checkWsEcho() {
+		addr := fmt.Sprintf("%s:%d/wsorder", base_addr, *serverport)
+		conn, err := websocket.Dial(addr, "", origin)
+		if err != nil {
+			log.Fatal("websocket.Dial error", err)
+		}
+		o := Order{
+		}
+
+		var reply Order
+		err = websocket.JSON.Receive(conn, &reply)
+		if err != nil {
+			log.Fatal("websocket.JSON.Receive error", err)
+		}
+
+		if reply != o {
+			log.Fatalf("reply != e: %s != %s", reply, o)
+		}
+		if err = conn.Close(); err != nil {
+			log.Fatal("conn.Close error", err)
+		}
+	}
 
 	overflowSize := flag.Uint("overflow_size", 15,ShelfSizePrompt)
 	hotSize := flag.Uint("hot_size", 10,ShelfSizePrompt)
@@ -159,6 +236,8 @@ func main(){
 	ordersPerSecond := flag.Uint("orders_per_second",2,OrderRatePrompt)
 	flag.Parse()
 	courier_out, err := os.Create("courier_out.log")
+	t, err := dec.Token()
+	fmt.Println(t)
 	check(err)
 	defer courier_out.Close()
 	courier_err, err := os.Create("courier_err.log")
