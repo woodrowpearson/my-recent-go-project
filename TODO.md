@@ -110,9 +110,12 @@ Following tests needed:
 - decrementAndUpdate (isCritical vs not isCritical)
 - selectCritical - DONE
 - swapAssessment - DONE
-- streamFromSource
-- BuildConfig
+- streamFromSource -DROPPED
+- BuildConfig - DROPPED
 
+- courier logging test - DONE
+- dispatch logging test - DONE
+- main IO loop test - DONE
 
 14 non-concurrency tests
 

@@ -29,7 +29,8 @@ func courier(order *Order, shelf *Shelf,overflow *Shelf,
 	https://stackoverflow.com/questions/29981050/concurrent-writing-to-a-file`
 	*/
 	if (order.IsCritical){
-		fmt.Fprintf(courier_err,PickupErrMsg,order.Id,order.DecayScore,
+		fmt.Fprintf(courier_err,PickupErrMsg,
+			order.Id,order.DecayScore,
 			shelf.name,contents)
 	} else {
 		fmt.Fprintf(courier_out,PickupSuccessMsg,order.Id,
