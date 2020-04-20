@@ -80,7 +80,7 @@ modifications to make:
 
 1. add in goroutine pool - DROPPED
 2. add in streaming json ingestion - DONE
-3. dispatching heuristic - WIP
+3. dispatching heuristic - DONE
 5. unit tests for all remaining cases incl concurrency
 6. move to a package
 7. have main.go import from the package as a CLI client.
@@ -91,6 +91,12 @@ modifications to make:
 3. add decayCriticality and decayScore to the computeDecayRate - DONE
 4. extend Snapshot to compute the new score on swap.
 4. WRITE TESTS
+
+## Monday 4/20
+
+1. finish up swapWillSave() function
+2. write tests against everything.
+3. be sure to check for race conditions on the map iteration - that was a nasty error.
 
 
 ### Notes

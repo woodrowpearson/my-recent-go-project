@@ -19,7 +19,6 @@ func buildShelf(array_capacity uint, name string,
 		modifier uint) *Shelf {
 	// TODO: UNIT TEST THIS
 	shelf := new(Shelf)
-//	shelf.item_array = make([]string, array_capacity)
 	shelf.name = name;
 	shelf.counter = int32(array_capacity)
 	shelf.modifier = modifier
@@ -29,8 +28,6 @@ func buildShelf(array_capacity uint, name string,
 }
 
 func (s *Shelf) incrementAndUpdate(o *Order){
-	//TODO: rename to courierPickup
-
 	/*
 		removes item from shelf
 	*/
@@ -42,7 +39,6 @@ func (s *Shelf) incrementAndUpdate(o *Order){
 }
 
 
-//func (s *Shelf) decrementAndUpdate(id string) (int,error) {
 func (s *Shelf) decrementAndUpdate(o *Order) {
 	s.contents.Set(o.Id, o)
 	if o.IsCritical {
@@ -65,9 +61,15 @@ func(s *Shelf) selectCritical(overflow *Shelf) *Order{
 		We need to do the casting because the concurrent map
 		only deals with interfaces.
 	*/
+	/*
+		 TODO: THE BUG IS HERE. There is some issue with 
+		iterating over the map while doing edits on the map.
+		error message is 
+		"go fatal error concurrent map iteration and map write"
+	*/
 	for _, ptr := range overflow.criticals.Items() {
 		order := castToOrder(ptr)
-		if s.name == order.shelf.name && order.Snapshot(s.modifier) > 0{
+		if s.name == order.shelf.name && order.swapWillPreserve(s.modifier){
 			return order
 		}
 	}

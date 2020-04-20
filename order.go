@@ -1,6 +1,9 @@
 package main
 
-
+import (
+	"time"
+	"fmt"
+)
 
 type Order struct {
 	Id string
@@ -11,33 +14,67 @@ type Order struct {
 	DecayScore float32
 	IsCritical bool
 	shelf *Shelf
-	// TODO: add an initial age here
-	// that we can use to recompute the decayscore in the event of a swap
+	placementTime time.Time
+	arrivalTime time.Time
 }
 
-func(o *Order) computeDecayScore(s *Shelf,
-	arrival_time int) float32{
+func(o *Order) computeDecayScore(modifier uint,arrival_time int) float32{
 	a := float32(o.ShelfLife)
-	b := o.DecayRate*float32(arrival_time)*float32(s.modifier)
+	b := o.DecayRate*float32(arrival_time)*float32(modifier)
 	if a == b {
 		return 0
 	}
 	return (a-b)/a
 }
 
-func(o *Order) Snapshot(modifier uint) float32 {
+func(o *Order) swapWillPreserve(modifier uint) bool {
 	/*
 		Needs to compute prospective decay score
 		based on current elapsed score + remaining elapsed score 
+
+		if new prospective score is greater than 0, update the decay score
+		to be the new prospective score.
+
+		1. we have the initially computed decay score
+		2. we have the timestamp of when it was placed on the shelf.
+		3. we have the distance in seconds from when it was placed to when 
+			it will be picked up
+		4. we have the current timestamp.
+		The formula for this is then:
+		elapsed = computeScore(o.shelf.modifier,current_time-initial_time)
+		on_new_shelf = computeScore(new_modifier,arrival_time-current_time)
+		prospective_score = elapsed + on_new_shelf
 	*/
-	return 1
+//	currentTime := time.Now()
+//	initialTime := o.placementTime
+	/* TODO:
+		1. compute elapsed time in MS
+		2. compute prospective time in MS
+		3. compute elapsed decay score
+		4. compute prospective decay score
+	
+	*/
+//	elapsed := o.computeDecayScore(o.shelf.modifier,int(currentTimeMS - initialTimeMS))
+//	prospective := o.computeDecayScore(modifier, int(1000*o.arrival_time) - currentTimeMs)
+//	prospective_score = elapsed + prospective
+	prospective_score := float32(1)
+	if prospective_score > 0{
+		o.IsCritical = false
+		o.DecayScore = prospective_score
+		return true
+	}
+
+	return false
 }
 
-func (o *Order) selectShelf(s *Shelves,arrival_time int) *Shelf {
+func (o *Order) selectShelf(s *Shelves,arrival_delay int) *Shelf {
 	/*
 	TODO: add in a criticality score for the order.
 	If the order is not safe for overflow, don't stick it 
 	in overflow unless matching shelf is empty.
+
+	The initial timestamp for the order is set as soon
+	as the shelf is selected.
 
 	*/
 	matchingShelf := s.overflow
@@ -50,10 +87,14 @@ func (o *Order) selectShelf(s *Shelves,arrival_time int) *Shelf {
 			matchingShelf = s.frozen
 	}
 
-	overflowDecayScore := o.computeDecayScore(s.overflow,
-					arrival_time)
-	matchingDecayScore := o.computeDecayScore(matchingShelf,
-				arrival_time)
+	overflowDecayScore := o.computeDecayScore(s.overflow.modifier,
+					arrival_delay)
+	matchingDecayScore := o.computeDecayScore(matchingShelf.modifier,
+				arrival_delay)
+	o.placementTime = time.Now()
+	o.arrivalTime = o.placementTime.Add(time.Second*time.Duration(arrival_delay))
+	fmt.Printf("placement time: %s\n",o.placementTime.String())
+	fmt.Printf("arrival time: %s\n",o.arrivalTime.String())
 	if (s.overflow.counter < 1 && matchingShelf.counter < 1){
 		// nowhere to place, must discard.
 		o.shelf = s.dead

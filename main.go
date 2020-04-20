@@ -16,21 +16,30 @@ func check(e error){
 	}
 }
 
+func getUnixTimestampMilliseconds() int64{
+	return time.Now().UnixNano() / int64(time.Millisecond)
+}
+
 func courier(order *Order, shelf *Shelf,overflow *Shelf,
-		arrival_time int,
+//		arrival_time int,
 		wg *sync.WaitGroup,
 		courier_out io.Writer,courier_err io.Writer){
-	time.Sleep(time.Duration(1000*arrival_time)*time.Millisecond)
-	value := order.computeDecayScore(shelf,arrival_time)
+//	time.Sleep(time.Duration(1000*arrival_time)*time.Millisecond)
+	time.After(time.Until(order.arrivalTime))
+	fmt.Printf("completed: ")
+	fmt.Println(time.Now().String())
+//	value := order.computeDecayScore(shelf,arrival_time)
 
 	/*
 	In Linux, thread safety is assured in file access:
 	https://stackoverflow.com/questions/29981050/concurrent-writing-to-a-file`
 	*/
 	if (order.IsCritical){
-		fmt.Fprintf(courier_err,PickupErrMsg,order.Id,value,shelf.name,shelf.contents)
+		fmt.Fprintf(courier_err,PickupErrMsg,order.Id,order.DecayScore,
+			shelf.name,shelf.contents)
 	} else {
-		fmt.Fprintf(courier_out,PickupSuccessMsg,order.Id,value,shelf.name,shelf.contents)
+		fmt.Fprintf(courier_out,PickupSuccessMsg,order.Id,
+			order.DecayScore,shelf.name,shelf.contents)
 	}
 	/*
 		 In the event that we're freeing up space on
@@ -66,16 +75,16 @@ func dispatch(o *Order,  args *SimulatorConfig,
 	(a map maybe?) that will let us swap out
 	overflow + critical orders to a matching shelf.
 	*/
-	arrival := rand.Intn(
+	arrival_seconds := rand.Intn(
 		int(args.courier_upper_bound -
 		args.courier_lower_bound)) +
 		int(args.courier_lower_bound)
-	shelf := o.selectShelf(args.shelves,arrival)
+	shelf := o.selectShelf(args.shelves,arrival_seconds)
 	if shelf != args.shelves.dead {
 		wg.Add(1)
 		fmt.Fprintf(args.dispatch_out,DispatchSuccessMsg,
 			o.Id,shelf.name,shelf.contents)
-		go courier(o,shelf,args.shelves.overflow,arrival,wg,
+		go courier(o,shelf,args.shelves.overflow,wg,
 			args.courier_out,args.courier_err)
 	} else {
 		fmt.Fprintf(args.dispatch_err,
