@@ -48,7 +48,6 @@ func courier(order *Order, shelf *Shelf,overflow *Shelf,
 
 func dispatch(o *Order,  args *SimulatorConfig,
 	wg *sync.WaitGroup){
-	arrival_seconds := args.getRandomArrival(args.courier_lower_bound,args.courier_upper_bound)
 	//  This doesnt need to be mocked - we can just set the lower and upper bound to zero
 	arrival_seconds := rand.Intn(
 		int(args.courier_upper_bound -
