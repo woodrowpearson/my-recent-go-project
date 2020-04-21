@@ -4,9 +4,12 @@ import (
 	"io"
 	"time"
 	"errors"
+	"math/rand"
 )
 
 type timeFunc func() time.Time
+
+type randFunc func(lower_bound int, upper_bound int) int
 
 // Helper struct for keeping argument lengths reasonable.
 type SimulatorConfig struct {
@@ -31,6 +34,11 @@ type SimulatorConfig struct {
 	second_value time.Duration
 	shelves *Shelves
 	getNow timeFunc
+	getRandRange randFunc
+}
+
+func getRandRange(lower_bound int, upper_bound int) int {
+	return rand.Intn(upper_bound - lower_bound)+lower_bound
 }
 
 // Allows config to be built from code by other projects,
@@ -44,9 +52,7 @@ func BuildConfig (overflow_size,hot_size,
 		dispatch_out,dispatch_err io.Writer,
 		inputSource io.Reader,
 		second_value time.Duration)(*SimulatorConfig, error){
-	if (courier_lower_bound > courier_upper_bound ||
-		courier_lower_bound < 1 ||
-		courier_upper_bound < 1){
+	if (courier_lower_bound > courier_upper_bound){
 
 		return nil,errors.New(CourierPrompt)
 	}
@@ -82,6 +88,7 @@ func BuildConfig (overflow_size,hot_size,
 		second_value: second_value,
 		shelves: &shelves,
 		getNow: time.Now,
+		getRandRange: getRandRange,
 	}
 	return &config,nil
 }

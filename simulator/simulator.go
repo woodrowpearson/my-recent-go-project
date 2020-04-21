@@ -23,7 +23,7 @@ func courier(order *Order, shelf *Shelf,overflow *Shelf,
 		courier_err io.Writer,getNow timeFunc){
 	time.Sleep(time.Until(order.arrivalTime))
 
-	contents := shelf.duplicateContents(order,false)
+	contents := shelf.duplicateContentsToSlice(order,false)
 	/*
 	In Linux, thread safety is assured in file access:
 	https://stackoverflow.com/questions/29981050/concurrent-writing-to-a-file`
@@ -48,16 +48,16 @@ func courier(order *Order, shelf *Shelf,overflow *Shelf,
 
 func dispatch(o *Order,  args *SimulatorConfig,
 	wg *sync.WaitGroup){
-	//  This doesnt need to be mocked - we can just set the lower and upper bound to zero
-	arrival_seconds := rand.Intn(
-		int(args.courier_upper_bound -
-		args.courier_lower_bound)) +
-		int(args.courier_lower_bound)
-	// END BLOCK
+	/*
+		Arrival seconds needs to be mocked, as
+		rand.Intn will not accept a range of 0,
+		which we need for the tests.
+	*/
+	arrival_seconds := args.getRandRange(int(args.courier_lower_bound),int(args.courier_upper_bound))
 	shelf := o.selectShelf(args.shelves,arrival_seconds,args.getNow)
 	if shelf != args.shelves.dead {
 		wg.Add(1)
-		contents := shelf.duplicateContents(o,true)
+		contents := shelf.duplicateContentsToSlice(o,true)
 		fmt.Fprintf(args.dispatch_out,DispatchSuccessMsg,
 			o.Id,shelf.name,contents)
 		go courier(o,shelf,args.shelves.overflow,wg,
@@ -70,6 +70,8 @@ func dispatch(o *Order,  args *SimulatorConfig,
 
 func Run(args *SimulatorConfig){
 	fmt.Println(args)
+	// Need to seed the rand global to get proper randomness.
+	rand.Seed(time.Now().UnixNano())
 	var wg sync.WaitGroup
 	resultChannel := make(chan Order)
 	go streamFromSource(args.inputSource,resultChannel,args)

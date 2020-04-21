@@ -13,6 +13,9 @@ func mockTimeNow() time.Time{
 	return time.Date(2020,1,0,0,0,0,0,location)
 }
 
+func mockGetRandRange(lower_bound int, upper_bound int) int {
+	return 0
+}
 
 func assertBoolean(t *testing.T, res bool, expected bool){
 	t.Helper()

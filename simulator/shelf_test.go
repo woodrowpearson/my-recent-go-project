@@ -47,7 +47,7 @@ it has been picked up).
 		hot_shelf.contents.Set(safe_order.Id,&safe_order)
 
 		hot_shelf.swapAssessment(&safe_order,overflow_shelf,mockTimeNow)
-		hot_shelf_contents := hot_shelf.duplicateContents(&safe_order,true)
+		hot_shelf_contents := hot_shelf.duplicateContentsToMap(&safe_order,true)
 		hot_shelf_order := castToOrder(hot_shelf_contents["a"])
 		assertOrder(t,hot_shelf_order,&critical_order)
 		assertInt32(t,hot_shelf.counter,int32(1))

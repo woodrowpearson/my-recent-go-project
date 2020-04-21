@@ -123,6 +123,12 @@ Following tests needed:
 - testing for race conditions (how do we do that?)
 - benchmarking on integration test
 
+## Tuesday 4/21
+
+1. tests for dispatch function - DONE
+2. test for runqueue function
+3. narrative of behaviors
+
 ### Notes
 
 1. current implementation with celery/redis WILL NOT SCALE. the logging rubric requires listing
