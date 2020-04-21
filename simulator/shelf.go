@@ -7,7 +7,7 @@ import (
 
 
 
-type Shelf struct {
+type orderShelf struct {
 	counter int32
 	contents cmap.ConcurrentMap
 	name string
@@ -18,9 +18,9 @@ type Shelf struct {
 /*
 Helper function for constructing shelf struct.
 */
-func buildShelf(array_capacity uint, name string,
-		modifier uint) *Shelf {
-	shelf := new(Shelf)
+func buildOrderShelf(array_capacity uint, name string,
+		modifier uint) *orderShelf {
+	shelf := new(orderShelf)
 	shelf.name = name;
 	shelf.counter = int32(array_capacity)
 	shelf.modifier = modifier
@@ -33,7 +33,7 @@ func buildShelf(array_capacity uint, name string,
 Removes an order from a shelf and updates capacity counter in a threadsafe manner.
 Removes order from at-risk map if order is at-risk.
 */
-func (s *Shelf) incrementAndUpdate(o *Order,remove_from_criticals bool){
+func (s *orderShelf) incrementAndUpdate(o *foodOrder,remove_from_criticals bool){
 	/*
 		removes item from shelf
 	*/
@@ -48,7 +48,7 @@ func (s *Shelf) incrementAndUpdate(o *Order,remove_from_criticals bool){
 Adds a new order to a shelf and updates capacity counter in a threadsafe manner.
 Adds order from at-risk map if order is at-risk.
 */
-func (s *Shelf) decrementAndUpdate(o *Order) {
+func (s *orderShelf) decrementAndUpdate(o *foodOrder) {
 	s.contents.Set(o.Id, o)
 	if o.IsCritical {
 		s.criticals.Set(o.Id,o)
@@ -59,9 +59,9 @@ func (s *Shelf) decrementAndUpdate(o *Order) {
 /*
 Casts a value to an Order pointer. Necessary for accessing values from concurrent hashmap.
 */
-func castToOrder(blob interface{}) *Order{
+func castToOrder(blob interface{}) *foodOrder{
 	switch order := blob.(type){
-		case *Order:
+		case *foodOrder:
 			return order
 		default:
 			panic("wrong type!!")
@@ -72,7 +72,7 @@ func castToOrder(blob interface{}) *Order{
 Scans shelf's map of at-risk orders and returns an eligible order for swapping
 to a safe shelf.
 */
-func(s *Shelf) selectCritical(overflow *Shelf,getNow timeFunc) *Order{
+func(s *orderShelf) selectCritical(overflow *orderShelf,getNow timeFunc) *foodOrder{
 	/*
 		We need to do the casting because the concurrent map
 		only deals with interfaces.
@@ -90,14 +90,14 @@ func(s *Shelf) selectCritical(overflow *Shelf,getNow timeFunc) *Order{
 /*
 Pushes keys of shelf contents to a slice in a threadsafe manner for logging purposes. 
 */
-func(s *Shelf) duplicateContentsToMap(order *Order,with_order bool) map[string]*Order {
+func(s *orderShelf) duplicateContentsToMap(order *foodOrder,with_order bool) map[string]*foodOrder {
 	/*
 	Range expression is evaluated once, at the start.
 	we're doing this to make a copy of the current shelf,
 	so that we don't risk weirdness in printing shelf contents
 	based on the concurrent maps.
 	*/
-	contents := make(map[string]*Order)
+	contents := make(map[string]*foodOrder)
 	for _, v := range s.contents.Items(){
 		o := castToOrder(v)
 		if with_order || (o.Id != order.Id){
@@ -110,7 +110,7 @@ func(s *Shelf) duplicateContentsToMap(order *Order,with_order bool) map[string]*
 /*
 Pushes keys of shelf contents to a slice in a threadsafe manner for logging purposes. 
 */
-func(s *Shelf) duplicateContentsToSlice(order *Order, with_order bool) []string{
+func(s *orderShelf) duplicateContentsToSlice(order *foodOrder, with_order bool) []string{
 	/*
 	Range expression is evaluated once, at the start.
 	we're doing this to make a copy of the current shelf,
@@ -132,7 +132,7 @@ func(s *Shelf) duplicateContentsToSlice(order *Order, with_order bool) []string{
 Determine if we can move an at-risk order from the overflow shelf
 in order to prevent it from decaying before pickup
 */
-func(s *Shelf) swapAssessment(o *Order, overflow *Shelf,statistics *Statistics,getNow timeFunc){
+func(s *orderShelf) swapAssessment(o *foodOrder, overflow *orderShelf,statistics *Statistics,getNow timeFunc){
 	/*
 		In the event that we're freeing up space on
 		a non-overflow shelf, we'll want to scan the overflow shelf's
@@ -163,10 +163,10 @@ func(s *Shelf) swapAssessment(o *Order, overflow *Shelf,statistics *Statistics,g
 }
 
 // Helper struct for keeping argument lengths reasonable.
-type Shelves struct{
-	overflow *Shelf
-	cold *Shelf
-	hot *Shelf
-	frozen *Shelf
-	dead *Shelf
+type orderShelves struct{
+	overflow *orderShelf
+	cold *orderShelf
+	hot *orderShelf
+	frozen *orderShelf
+	dead *orderShelf
 }

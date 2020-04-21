@@ -84,8 +84,8 @@ func TestRunPrimary(t *testing.T){
 	assertStrings(t,dispatch_err.String(),"")
 	assertUint64(t,statistics.GetTotalProcessed(),4)
 	assertUint64(t,statistics.GetTotalSuccesses(),4)
-	assertUint64(t,statistics.GetColdSuccess(),2)
-	assertUint64(t,statistics.GetFrozenSuccess(),2)
+	assertUint64(t,statistics.GetColdSuccesses(),2)
+	assertUint64(t,statistics.GetFrozenSuccesses(),2)
 }
 
 
@@ -132,7 +132,7 @@ to the dispatch_out io.Writer.
 		)
 		check(err)
 		args.getRandRange = mockGetRandRange
-		order := Order{Id:"a",Name:"dummy",Temp:"hot",ShelfLife:200,DecayRate:1}
+		order := foodOrder{Id:"a",Name:"dummy",Temp:"hot",ShelfLife:200,DecayRate:1}
 		dispatch(&order, args,&statistics,&wg)
 		wg.Wait()
 		out_res := dispatch_out.String()
@@ -184,7 +184,7 @@ message to the dispatch_err io.Writer.
 		)
 		check(err)
 		args.getRandRange = mockGetRandRange
-		order := Order{Id:"a",Name:"dummy",Temp:"hot",ShelfLife:200,DecayRate:1}
+		order := foodOrder{Id:"a",Name:"dummy",Temp:"hot",ShelfLife:200,DecayRate:1}
 		dispatch(&order, args,&statistics,&wg)
 		wg.Wait()
 		out_res := dispatch_out.String()
@@ -222,8 +222,8 @@ Wait group should be finished.
 		statistics := Statistics{}
 		var wg sync.WaitGroup
 		wg.Add(1)
-		overflow_shelf := buildShelf(1,"overflow",0)
-		order := Order{Id:"a",Name:"dummy",Temp:"hot",ShelfLife:12,DecayRate:1,
+		overflow_shelf := buildOrderShelf(1,"overflow",0)
+		order := foodOrder{Id:"a",Name:"dummy",Temp:"hot",ShelfLife:12,DecayRate:1,
 				IsCritical:false,placementTime:mockTimeNow(),
 				arrivalTime:mockTimeNow(),shelf:overflow_shelf,DecayScore:1.00}
 		overflow_shelf.contents.Set(order.Id,&order)
@@ -248,7 +248,7 @@ Current shelf contents: [].
 		assertStrings(t,err_res,expected_err)
 		assertUint64(t,statistics.GetTotalProcessed(),1)
 		assertUint64(t,statistics.GetTotalSuccesses(),1)
-		assertUint64(t,statistics.GetHotSuccess(),1)
+		assertUint64(t,statistics.GetHotSuccesses(),1)
 	})
 
 	msg = `
@@ -261,8 +261,8 @@ Wait group should be finished.
 		statistics := Statistics{}
 		var wg sync.WaitGroup
 		wg.Add(1)
-		overflow_shelf := buildShelf(1,"overflow",0)
-		order := Order{Id:"a",Name:"dummy",Temp:"hot",ShelfLife:12,DecayRate:1,
+		overflow_shelf := buildOrderShelf(1,"overflow",0)
+		order := foodOrder{Id:"a",Name:"dummy",Temp:"hot",ShelfLife:12,DecayRate:1,
 				IsCritical:true,placementTime:mockTimeNow(),
 				arrivalTime:mockTimeNow(),shelf:overflow_shelf,DecayScore:0.00}
 		overflow_shelf.contents.Set(order.Id,&order)

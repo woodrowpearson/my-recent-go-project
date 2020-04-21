@@ -19,8 +19,8 @@ Simulates an order being picked up by a courier.
 Attempts to trigger shelf-swapping from overflow.
 Logs whether the order is successfully picked up or decayed out.
 */
-func courier(order *Order, shelf *Shelf,
-		overflow *Shelf,
+func courier(order *foodOrder, shelf *orderShelf,
+		overflow *orderShelf,
 		statistics *Statistics,
 		wg *sync.WaitGroup,
 		courier_out_log *log.Logger,
@@ -47,7 +47,7 @@ Determines when the courier will arrive, selects a shelf for placement,
 places the item on the shelf, and dispatches a courier.
 If there is no shelf space, logs a dispatching error message.
 */
-func dispatch(o *Order,  args *SimulatorConfig,
+func dispatch(o *foodOrder,  args *SimulatorConfig,
 	statistics *Statistics,
 	wg *sync.WaitGroup){
 	/*
@@ -81,7 +81,7 @@ func Run(args *SimulatorConfig,statistics *Statistics) *Statistics {
 	// Need to seed the rand global to get proper randomness.
 	rand.Seed(time.Now().UnixNano())
 	var wg sync.WaitGroup
-	resultChannel := make(chan Order)
+	resultChannel := make(chan foodOrder)
 	go streamFromSource(args.inputSource,resultChannel,args)
 	ioLoop:
 	for {

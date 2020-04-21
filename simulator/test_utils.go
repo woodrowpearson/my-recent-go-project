@@ -24,14 +24,14 @@ func assertBoolean(t *testing.T, res bool, expected bool){
 	}
 }
 
-func assertShelf(t *testing.T, res *Shelf, expected *Shelf){
+func assertShelf(t *testing.T, res *orderShelf, expected *orderShelf){
 	t.Helper()
 	if res != expected{
 		t.Errorf("received %+v, expected %+v",res,expected)
 	}
 }
 
-func assertOrder(t *testing.T, res *Order, expected *Order){
+func assertOrder(t *testing.T, res *foodOrder, expected *foodOrder){
 	t.Helper()
 	if res != expected{
 		t.Errorf("received %+v, expected %+v",res,expected)

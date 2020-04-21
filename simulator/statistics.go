@@ -21,7 +21,7 @@ type Statistics struct {
 	totalSwapped uint64
 }
 
-func(stat *Statistics) update(o *Order, success bool, decayed bool){
+func(stat *Statistics) update(o *foodOrder, success bool, decayed bool){
 	if success {
 		atomic.AddUint64(&stat.totalSuccesses,1)
 		switch o.Temp {

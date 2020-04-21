@@ -12,7 +12,7 @@ Ingest and parse inputs from an io.Reader in a streaming manner.
 Adds an artificial pause between blocks of orders if configured
 with an order rate of > 0. An order rate of 0 introduces no pause.
 */
-func streamFromSource(inputSource io.Reader, resultChannel chan Order, args *SimulatorConfig){
+func streamFromSource(inputSource io.Reader, resultChannel chan foodOrder, args *SimulatorConfig){
 	/*
 		a websocket can be represented by an io.Reader
 		For the purposes of the default, it will be a file.
@@ -32,7 +32,7 @@ func streamFromSource(inputSource io.Reader, resultChannel chan Order, args *Sim
 	check(err)
 	ct := uint(0)
 	for dec.More(){
-		var o Order
+		var o foodOrder
 		err := dec.Decode(&o)
 		check(err)
 		resultChannel <- o

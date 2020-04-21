@@ -29,20 +29,20 @@ it has been picked up).
 
 	t.Run(msg, func(t *testing.T){
 		statistics := Statistics{}
-		overflow_shelf := buildShelf(1,"overflow",4)
-		hot_shelf := buildShelf(1,"hot",1)
+		overflow_shelf := buildOrderShelf(1,"overflow",4)
+		hot_shelf := buildOrderShelf(1,"hot",1)
 
 		mock_now := mockTimeNow()
 		one_second_ago := mock_now.Add(time.Second*time.Duration(-1))
 		arrival_time := one_second_ago.Add(time.Second*time.Duration(7))
-		critical_order := Order{Id:"a",Name:"dummy",Temp:"hot",ShelfLife:12,DecayRate:1,
+		critical_order := foodOrder{Id:"a",Name:"dummy",Temp:"hot",ShelfLife:12,DecayRate:1,
 				IsCritical:true,placementTime:one_second_ago,
 				arrivalTime:arrival_time,shelf:overflow_shelf}
 		critical_order.DecayScore = critical_order.computeDecayScore(overflow_shelf.modifier,7*1000)
 		overflow_shelf.criticals.Set(critical_order.Id,&critical_order)
 		overflow_shelf.contents.Set(critical_order.Id,&critical_order)
 
-		safe_order := Order{Id:"b",Name:"dummy2",Temp:"hot",ShelfLife:12,DecayRate:1,
+		safe_order := foodOrder{Id:"b",Name:"dummy2",Temp:"hot",ShelfLife:12,DecayRate:1,
 				IsCritical:false,placementTime:one_second_ago,
 				arrivalTime:arrival_time,shelf:hot_shelf,DecayScore:1}
 		hot_shelf.contents.Set(safe_order.Id,&safe_order)
@@ -66,13 +66,13 @@ and available count increased by one.
 `
 	t.Run(msg,func(t *testing.T){
 		statistics := Statistics{}
-		overflow_shelf := buildShelf(1,"overflow",4)
-		hot_shelf := buildShelf(1,"hot",1)
+		overflow_shelf := buildOrderShelf(1,"overflow",4)
+		hot_shelf := buildOrderShelf(1,"hot",1)
 
 		mock_now := mockTimeNow()
 		one_second_ago := mock_now.Add(time.Second*time.Duration(-1))
 		arrival_time := one_second_ago.Add(time.Second*time.Duration(7))
-		safe_order := Order{Id:"b",Name:"dummy2",Temp:"hot",ShelfLife:12,DecayRate:1,
+		safe_order := foodOrder{Id:"b",Name:"dummy2",Temp:"hot",ShelfLife:12,DecayRate:1,
 				IsCritical:false,placementTime:one_second_ago,
 				arrivalTime:arrival_time,shelf:hot_shelf,DecayScore:1}
 		hot_shelf.contents.Set(safe_order.Id,&safe_order)
@@ -90,13 +90,13 @@ and available count increased by one.
 `
 	t.Run(msg, func(t *testing.T){
 		statistics := Statistics{}
-		overflow_shelf := buildShelf(1,"overflow",4)
-		hot_shelf := buildShelf(1,"hot",1)
+		overflow_shelf := buildOrderShelf(1,"overflow",4)
+		hot_shelf := buildOrderShelf(1,"hot",1)
 
 		mock_now := mockTimeNow()
 		one_second_ago := mock_now.Add(time.Second*time.Duration(-1))
 		arrival_time := one_second_ago.Add(time.Second*time.Duration(7))
-		safe_order := Order{Id:"b",Name:"dummy2",Temp:"cold",ShelfLife:1000,DecayRate:1,
+		safe_order := foodOrder{Id:"b",Name:"dummy2",Temp:"cold",ShelfLife:1000,DecayRate:1,
 				IsCritical:false,placementTime:one_second_ago,
 				arrivalTime:arrival_time,shelf:overflow_shelf,DecayScore:1}
 		overflow_shelf.contents.Set(safe_order.Id,&safe_order)
@@ -123,12 +123,12 @@ func TestSelectCritical(t *testing.T){
 			We're going to verify that the order itself
 			gets returned 
 		*/
-		overflow_shelf := buildShelf(1,"overflow",4)
-		hot_shelf := buildShelf(1,"hot",1)
+		overflow_shelf := buildOrderShelf(1,"overflow",4)
+		hot_shelf := buildOrderShelf(1,"hot",1)
 		mock_now := mockTimeNow()
 		one_second_ago := mock_now.Add(time.Second*time.Duration(-1))
 		arrival_time := one_second_ago.Add(time.Second*time.Duration(7))
-		order := Order{Id:"a",Name:"dummy",Temp:"hot",ShelfLife:12,DecayRate:1,
+		order := foodOrder{Id:"a",Name:"dummy",Temp:"hot",ShelfLife:12,DecayRate:1,
 				IsCritical:true,placementTime:one_second_ago,
 				arrivalTime:arrival_time,shelf:overflow_shelf}
 		order.DecayScore = order.computeDecayScore(overflow_shelf.modifier,7*1000)
@@ -144,12 +144,12 @@ func TestSelectCritical(t *testing.T){
 			selectCritical is on a hot shelf, we only
 			have a cold order in overflow
 		*/
-		overflow_shelf := buildShelf(1,"overflow",4)
-		hot_shelf := buildShelf(1,"hot",1)
+		overflow_shelf := buildOrderShelf(1,"overflow",4)
+		hot_shelf := buildOrderShelf(1,"hot",1)
 		mock_now := mockTimeNow()
 		one_second_ago := mock_now.Add(time.Second*time.Duration(-1))
 		arrival_time := one_second_ago.Add(time.Second*time.Duration(7))
-		order := Order{Id:"a",Name:"dummy",Temp:"cold",ShelfLife:12,DecayRate:1,
+		order := foodOrder{Id:"a",Name:"dummy",Temp:"cold",ShelfLife:12,DecayRate:1,
 				IsCritical:true,placementTime:one_second_ago,
 				arrivalTime:arrival_time,shelf:overflow_shelf}
 		order.DecayScore = order.computeDecayScore(overflow_shelf.modifier,7*1000)

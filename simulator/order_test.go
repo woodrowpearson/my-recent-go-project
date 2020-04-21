@@ -26,12 +26,12 @@ func TestSwapWillPreserve(t *testing.T){
 					(12 - (6 seconds)*1)/12 => 0.5 (on new shelf)
 				for a total of 1.17, which will let the order survive.
 		*/
-		overflow_shelf := buildShelf(1,"overflow",4)
-		hot_shelf := buildShelf(1,"hot",1)
+		overflow_shelf := buildOrderShelf(1,"overflow",4)
+		hot_shelf := buildOrderShelf(1,"hot",1)
 		mock_now := mockTimeNow()
 		one_second_ago := mock_now.Add(time.Second*time.Duration(-1))
 		arrival_time := one_second_ago.Add(time.Second*time.Duration(7))
-		order := Order{Id:"a",Name:"dummy",Temp:"hot",ShelfLife:12,DecayRate:1,
+		order := foodOrder{Id:"a",Name:"dummy",Temp:"hot",ShelfLife:12,DecayRate:1,
 				IsCritical:true,placementTime:one_second_ago,
 				arrivalTime:arrival_time,shelf:overflow_shelf}
 		order.DecayScore = order.computeDecayScore(overflow_shelf.modifier,7*1000)
@@ -62,12 +62,12 @@ func TestSwapWillPreserve(t *testing.T){
 					(12 - (7 seconds)*3*1)/12 => -0.75 (on new shelf)
 				for a total of roughly -0.08, which would still fail
 		*/
-		overflow_shelf := buildShelf(1,"overflow",4)
-		hot_shelf := buildShelf(1,"hot",3)
+		overflow_shelf := buildOrderShelf(1,"overflow",4)
+		hot_shelf := buildOrderShelf(1,"hot",3)
 		mock_now := mockTimeNow()
 		one_second_ago := mock_now.Add(time.Second*time.Duration(-1))
 		arrival_time := one_second_ago.Add(time.Second*time.Duration(8))
-		order := Order{Id:"a",Name:"dummy",Temp:"hot",ShelfLife:12,DecayRate:1,
+		order := foodOrder{Id:"a",Name:"dummy",Temp:"hot",ShelfLife:12,DecayRate:1,
 				IsCritical:true,placementTime:one_second_ago,
 				arrivalTime:arrival_time,shelf:overflow_shelf}
 		order.DecayScore = order.computeDecayScore(overflow_shelf.modifier,8*1000)
@@ -87,7 +87,7 @@ func TestComputeDecayScore(t *testing.T){
 			3. A greater than B
 	*/
 
-	order := Order{Id:"a",Name:"dummy",Temp:"hot",
+	order := foodOrder{Id:"a",Name:"dummy",Temp:"hot",
 			ShelfLife:200,DecayRate:0.25}
 
 	t.Run("Returns zero when order shelf life is zero", 
@@ -123,15 +123,15 @@ outweighs decay factors.
 }
 
 func TestSelectShelf(t *testing.T){
-	order := Order{Id:"a",Name:"dummy",Temp:"hot",
+	order := foodOrder{Id:"a",Name:"dummy",Temp:"hot",
 		ShelfLife: 200, DecayRate: 0.25}
-	overflow := buildShelf(1,"overflow",
+	overflow := buildOrderShelf(1,"overflow",
 			0)
-	cold := buildShelf(1, "cold",0)
-	hot := buildShelf(1,"hot",0)
-	frozen := buildShelf(1,"frozen",0)
-	dead := buildShelf(0,"dead",0)
-	shelves := Shelves{overflow:overflow,cold:cold,
+	cold := buildOrderShelf(1, "cold",0)
+	hot := buildOrderShelf(1,"hot",0)
+	frozen := buildOrderShelf(1,"frozen",0)
+	dead := buildOrderShelf(0,"dead",0)
+	shelves := orderShelves{overflow:overflow,cold:cold,
 			hot:hot,frozen:frozen,dead:dead}
 
 	t.Run("returns dead if matchingScore and overflorScore are both less than zero",

@@ -5,7 +5,7 @@ import (
 	"sync/atomic"
 )
 
-type Order struct {
+type foodOrder struct {
 	Id string
 	Name string
 	Temp string
@@ -13,12 +13,12 @@ type Order struct {
 	DecayRate float32
 	DecayScore float32
 	IsCritical bool
-	shelf *Shelf
+	shelf *orderShelf
 	placementTime time.Time
 	arrivalTime time.Time
 }
 
-func(o *Order) computeDecayScore(modifier uint,arrival_time_ms int64) float32{
+func(o *foodOrder) computeDecayScore(modifier uint,arrival_time_ms int64) float32{
 	// TODO: please fix up the type coercions, they're nasty
 	a := float32(o.ShelfLife)
 	b := o.DecayRate*(float32(arrival_time_ms)/1000)*float32(modifier)
@@ -28,7 +28,7 @@ func(o *Order) computeDecayScore(modifier uint,arrival_time_ms int64) float32{
 	return (a-b)/a
 }
 
-func(o *Order) swapWillPreserve(modifier uint, getNow timeFunc) bool {
+func(o *foodOrder) swapWillPreserve(modifier uint, getNow timeFunc) bool {
 	/*
 		Needs to compute prospective decay score
 		based on current elapsed score + remaining elapsed score 
@@ -65,7 +65,7 @@ func(o *Order) swapWillPreserve(modifier uint, getNow timeFunc) bool {
 	return false
 }
 
-func (o *Order) selectShelf(s *Shelves,arrival_delay int,getNow timeFunc) *Shelf {
+func (o *foodOrder) selectShelf(s *orderShelves,arrival_delay int,getNow timeFunc) *orderShelf {
 	/*
 	TODO: Add a narrative for this.
 

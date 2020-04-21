@@ -32,7 +32,7 @@ type SimulatorConfig struct {
 	dispatch_err_log *log.Logger
 	verbose_log *log.Logger
 	inputSource io.Reader
-	shelves *Shelves
+	shelves *orderShelves
 	verbose bool
 	// necessary for mocks.
 	getNow timeFunc
@@ -59,13 +59,13 @@ func BuildConfig (overflow_size,hot_size,
 
 		return nil,errors.New(CourierPrompt)
 	}
-	overflow := buildShelf(overflow_size,"overflow",
+	overflow := buildOrderShelf(overflow_size,"overflow",
 			overflow_modifier)
-	cold := buildShelf(cold_size, "cold",cold_modifier)
-	hot := buildShelf(hot_size,"hot",hot_modifier)
-	frozen := buildShelf(frozen_size,"frozen",frozen_modifier)
-	dead := buildShelf(1,"dead",0)
-	shelves := Shelves{overflow:overflow,cold:cold,frozen:frozen,
+	cold := buildOrderShelf(cold_size, "cold",cold_modifier)
+	hot := buildOrderShelf(hot_size,"hot",hot_modifier)
+	frozen := buildOrderShelf(frozen_size,"frozen",frozen_modifier)
+	dead := buildOrderShelf(1,"dead",0)
+	shelves := orderShelves{overflow:overflow,cold:cold,frozen:frozen,
 			hot:hot,dead:dead}
 	/*
 	We need to wrap the logs in a log.Logger object.
