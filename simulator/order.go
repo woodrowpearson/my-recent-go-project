@@ -2,6 +2,7 @@ package simulator
 
 import (
 	"time"
+	"sync/atomic"
 )
 
 type Order struct {
@@ -83,10 +84,18 @@ func (o *Order) selectShelf(s *Shelves,arrival_delay int,getNow timeFunc) *Shelf
 					int64(arrival_delay*1000))
 	matchingDecayScore := o.computeDecayScore(matchingShelf.modifier,
 				int64(arrival_delay*1000))
-//	o.placementTime = time.Now()
 	o.placementTime = getNow()
 	o.arrivalTime = o.placementTime.Add(time.Second*time.Duration(arrival_delay))
-	if (s.overflow.counter < 1 && matchingShelf.counter < 1){
+	/*
+		We only need to load the counters once in this function.
+		All reductions in the shelf counters happen on a single thread
+		(specifically the decrementAndUpdate calls in this very function,
+		which is only called from the main i/o loop).
+
+	*/
+	overflowCounter := atomic.LoadInt32(&s.overflow.counter)
+	matchingShelfCounter := atomic.LoadInt32(&matchingShelf.counter)
+	if (overflowCounter < 1 && matchingShelfCounter < 1){
 		// nowhere to place, must discard.
 		o.shelf = s.dead
 		return s.dead
@@ -96,15 +105,14 @@ func (o *Order) selectShelf(s *Shelves,arrival_delay int,getNow timeFunc) *Shelf
 		o.shelf = s.dead
 		return s.dead
 	}
-
-	if (overflowDecayScore > 0 && s.overflow.counter > 0){
+	if (overflowDecayScore > 0 && overflowCounter > 0){
 		// will survive overflow
 		o.shelf = s.overflow
 		o.DecayScore = overflowDecayScore
 		o.shelf.decrementAndUpdate(o)
 		return s.overflow
 	}
-	if (matchingDecayScore > 0 && matchingShelf.counter > 0){
+	if (matchingDecayScore > 0 && matchingShelfCounter > 0){
 		o.shelf = matchingShelf
 		o.DecayScore = matchingDecayScore
 		o.shelf.decrementAndUpdate(o)

@@ -128,7 +128,7 @@ func(s *Shelf) duplicateContentsToSlice(order *Order, with_order bool) []string{
 }
 
 
-func(s *Shelf) swapAssessment(o *Order, overflow *Shelf,getNow timeFunc){
+func(s *Shelf) swapAssessment(o *Order, overflow *Shelf,statistics *Statistics,getNow timeFunc){
 	/*
 		In the event that we're freeing up space on
 		a non-overflow shelf, we'll want to scan the overflow shelf's
@@ -145,6 +145,7 @@ func(s *Shelf) swapAssessment(o *Order, overflow *Shelf,getNow timeFunc){
 			overflow.incrementAndUpdate(to_swap,true)
 			s.contents.Remove(o.Id)
 			s.contents.Set(to_swap.Id,to_swap)
+			statistics.updateSwapped()
 		} else {
 			/*
 				Any order not in overflow is categorically not critical.

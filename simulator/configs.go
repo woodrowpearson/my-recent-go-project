@@ -29,11 +29,11 @@ type SimulatorConfig struct {
 	dispatch_out io.Writer
 	dispatch_err io.Writer
 	inputSource io.Reader
-	// normally it's 1, but for tests we'll want it at 0.
-	// refers to the value of a second
-	second_value time.Duration
 	shelves *Shelves
+	verbose bool
+	// necessary for mocks.
 	getNow timeFunc
+	// necessary for mocks.
 	getRandRange randFunc
 }
 
@@ -41,24 +41,20 @@ func getRandRange(lower_bound int, upper_bound int) int {
 	return rand.Intn(upper_bound - lower_bound)+lower_bound
 }
 
-// Allows config to be built from code by other projects,
-// as opposed to just CLI args.
-// TODO: add in defaults.
+/*
+Allows config to be built from code by other projects,
+as opposed to just CLI args.
+*/
 func BuildConfig (overflow_size,hot_size,
 		cold_size,frozen_size,courier_lower_bound,
 		courier_upper_bound,orders_per_second,
 		overflow_modifier,cold_modifier,hot_modifier,
 		frozen_modifier uint,courier_out,courier_err,
 		dispatch_out,dispatch_err io.Writer,
-		inputSource io.Reader,
-		second_value time.Duration)(*SimulatorConfig, error){
+		inputSource io.Reader,verbose bool)(*SimulatorConfig, error){
 	if (courier_lower_bound > courier_upper_bound){
 
 		return nil,errors.New(CourierPrompt)
-	}
-	// TODO: account for websocket ingestion where there's no guarantee of speed
-	if (orders_per_second < 1){
-		return nil, errors.New(OrderRatePrompt)
 	}
 	overflow := buildShelf(overflow_size,"overflow",
 			overflow_modifier)
@@ -85,8 +81,8 @@ func BuildConfig (overflow_size,hot_size,
 		dispatch_out:dispatch_out,
 		dispatch_err:dispatch_err,
 		inputSource:inputSource,
-		second_value: second_value,
 		shelves: &shelves,
+		verbose: verbose,
 		getNow: time.Now,
 		getRandRange: getRandRange,
 	}

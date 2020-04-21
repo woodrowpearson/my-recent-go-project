@@ -35,5 +35,9 @@ equal to 0.
 `
 const OrderRatePrompt = `
 Specify the number of orders ingested per second.
-Must be greater than zero.
+If specified as 0, Simulator will consume orders immediately upon ingestion from input source.
+`
+
+const VerbosePrompt = `
+Passing this flag in will print orders to stdout upon ingestion from the input source.
 `

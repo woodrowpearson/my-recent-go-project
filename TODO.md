@@ -126,8 +126,10 @@ Following tests needed:
 ## Tuesday 4/21
 
 1. tests for dispatch function - DONE
-2. test for runqueue function
-3. narrative of behaviors
+2. test for runqueue function - DONE
+3. fix race conditions in RE logging.
+4. add that -v flag back in.
+4. narrative of behaviors
 
 ### Notes
 

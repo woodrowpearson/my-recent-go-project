@@ -28,6 +28,7 @@ it has been picked up).
 `
 
 	t.Run(msg, func(t *testing.T){
+		statistics := Statistics{}
 		overflow_shelf := buildShelf(1,"overflow",4)
 		hot_shelf := buildShelf(1,"hot",1)
 
@@ -46,7 +47,7 @@ it has been picked up).
 				arrivalTime:arrival_time,shelf:hot_shelf,DecayScore:1}
 		hot_shelf.contents.Set(safe_order.Id,&safe_order)
 
-		hot_shelf.swapAssessment(&safe_order,overflow_shelf,mockTimeNow)
+		hot_shelf.swapAssessment(&safe_order,overflow_shelf,&statistics,mockTimeNow)
 		hot_shelf_contents := hot_shelf.duplicateContentsToMap(&safe_order,true)
 		hot_shelf_order := castToOrder(hot_shelf_contents["a"])
 		assertOrder(t,hot_shelf_order,&critical_order)
@@ -54,6 +55,7 @@ it has been picked up).
 		assertInt32(t,overflow_shelf.counter, int32(2))
 		assertBoolean(t,overflow_shelf.contents.IsEmpty(),true)
 		assertBoolean(t,overflow_shelf.criticals.IsEmpty(),true)
+		assertUint64(t,statistics.GetTotalSwapped(),1)
 	})
 
 
@@ -63,6 +65,7 @@ Hot shelf should have its order removed
 and available count increased by one.
 `
 	t.Run(msg,func(t *testing.T){
+		statistics := Statistics{}
 		overflow_shelf := buildShelf(1,"overflow",4)
 		hot_shelf := buildShelf(1,"hot",1)
 
@@ -73,10 +76,11 @@ and available count increased by one.
 				IsCritical:false,placementTime:one_second_ago,
 				arrivalTime:arrival_time,shelf:hot_shelf,DecayScore:1}
 		hot_shelf.contents.Set(safe_order.Id,&safe_order)
-		hot_shelf.swapAssessment(&safe_order,overflow_shelf,mockTimeNow)
+		hot_shelf.swapAssessment(&safe_order,overflow_shelf,&statistics,mockTimeNow)
 		assertInt32(t,hot_shelf.counter,int32(2))
 		assertInt32(t,overflow_shelf.counter,int32(1))
 		assertBoolean(t,hot_shelf.contents.IsEmpty(),true)
+		assertUint64(t,statistics.GetTotalSwapped(),0)
 	})
 
 	msg = `
@@ -85,6 +89,7 @@ Overflow shelf should have its order removed
 and available count increased by one.
 `
 	t.Run(msg, func(t *testing.T){
+		statistics := Statistics{}
 		overflow_shelf := buildShelf(1,"overflow",4)
 		hot_shelf := buildShelf(1,"hot",1)
 
@@ -95,11 +100,12 @@ and available count increased by one.
 				IsCritical:false,placementTime:one_second_ago,
 				arrivalTime:arrival_time,shelf:overflow_shelf,DecayScore:1}
 		overflow_shelf.contents.Set(safe_order.Id,&safe_order)
-		overflow_shelf.swapAssessment(&safe_order,overflow_shelf,mockTimeNow)
+		overflow_shelf.swapAssessment(&safe_order,overflow_shelf,&statistics,mockTimeNow)
 		assertInt32(t,hot_shelf.counter,int32(1))
 		assertInt32(t,overflow_shelf.counter,int32(2))
 		assertBoolean(t,hot_shelf.contents.IsEmpty(),true)
 		assertBoolean(t,overflow_shelf.contents.IsEmpty(),true)
+		assertUint64(t,statistics.GetTotalSwapped(),0)
 	})
 
 }
@@ -152,6 +158,4 @@ func TestSelectCritical(t *testing.T){
 		assertOrder(t,res,nil)
 
 	})
-
-
 }

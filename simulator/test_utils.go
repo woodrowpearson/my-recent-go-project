@@ -58,3 +58,10 @@ func assertFloat32(t *testing.T, res float32, expected float32){
 		t.Errorf("received %.3f, expected %.3f",res,expected)
 	}
 }
+
+func assertUint64(t *testing.T, res uint64, expected uint64){
+	t.Helper()
+	if res != expected{
+		t.Errorf("received %d, expected %d",res,expected)
+	}
+}

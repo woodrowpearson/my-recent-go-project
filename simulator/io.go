@@ -4,16 +4,14 @@ import (
 	"bufio"
 	"encoding/json"
 	"io"
-	"fmt"
 	"time"
 )
 
-// TODO: write up documentation for this indicating
-// that a 0 for orders_per_second must be passed in
-// if the entirety of the orders is not inside a file
-// (i.e. its from an arbitrary source
-// TODO: have woody figure out a cleaner way to represent
-// the orders per second from non-controllable sources
+/*
+Ingest and parse inputs from an io.Reader in a streaming manner.
+Adds an artificial pause between blocks of orders if configured
+with an order rate of > 0. An order rate of 0 introduces no pause.
+*/
 func streamFromSource(inputSource io.Reader, resultChannel chan Order, args *SimulatorConfig){
 	/*
 		a websocket can be represented by an io.Reader
@@ -30,8 +28,7 @@ func streamFromSource(inputSource io.Reader, resultChannel chan Order, args *Sim
 	*/
 
 	dec := json.NewDecoder(bufio.NewReader(inputSource))
-	t, err := dec.Token()
-	fmt.Println(t)
+	_, err := dec.Token()
 	check(err)
 	ct := uint(0)
 	for dec.More(){
@@ -40,16 +37,16 @@ func streamFromSource(inputSource io.Reader, resultChannel chan Order, args *Sim
 		check(err)
 		resultChannel <- o
 		ct += 1
-		if ct == args.orders_per_second {
+		/*
+			Adds an artificial pause for simulating input rates.
+			If there is no pause, input rate is controlled by the inputSource's supplier.
+		*/
+		if args.orders_per_second > 0 && ct == args.orders_per_second {
 			ct = 0
-			time.Sleep(time.Duration(
-				args.second_value)*time.Second)
-			fmt.Println("sleeping")
+			time.Sleep(1*time.Second)
 		}
 	}
-	t, err = dec.Token()
-	fmt.Println(t)
+	_, err = dec.Token()
 	check(err)
-	fmt.Println("closing input channel")
 	close(resultChannel)
 }

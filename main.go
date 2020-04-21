@@ -19,7 +19,7 @@ func main(){
 		TODO: clean up style stuff. I dont know what the rules
 		are for formatting and camelcase vs snakecase.
 	*/
-
+	verbose := flag.Bool("v",false, simulator.VerbosePrompt)
 	overflowSize := flag.Uint("overflow_size", 15,simulator.ShelfSizePrompt)
 	hotSize := flag.Uint("hot_size", 10,simulator.ShelfSizePrompt)
 	coldSize := flag.Uint("cold_size", 10,simulator.ShelfSizePrompt)
@@ -70,12 +70,13 @@ func main(){
 		dispatch_out,
 		dispatch_err,
 		inputSource,
-		1,
+		*verbose,
 	)
 	if err != nil {
 		fmt.Println(err.Error());
 		os.Exit(1)
 	}
 	fmt.Printf("Configuration: %+v\n", args)
-	simulator.Run(args)
+	statistics := simulator.Statistics{}
+	simulator.Run(args,&statistics)
 }
