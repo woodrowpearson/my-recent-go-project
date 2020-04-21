@@ -23,6 +23,7 @@ func TestDispatch(t *testing.T){
 		Two cases:
 			1. discarded due to dead shelf.
 			2. sent for courier due to available shelf.
+		need: buildArds, wg
 	*/
 
 

@@ -50,6 +50,7 @@ func BuildConfig (overflow_size,hot_size,
 
 		return nil,errors.New(CourierPrompt)
 	}
+	// TODO: account for websocket ingestion where there's no guarantee of speed
 	if (orders_per_second < 1){
 		return nil, errors.New(OrderRatePrompt)
 	}

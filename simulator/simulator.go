@@ -48,13 +48,8 @@ func courier(order *Order, shelf *Shelf,overflow *Shelf,
 
 func dispatch(o *Order,  args *SimulatorConfig,
 	wg *sync.WaitGroup){
-	/* 
-	TODO: get a concurrent structure in here
-	(a map maybe?) that will let us swap out
-	overflow + critical orders to a matching shelf.
-	*/
-
-	// TODO: move this to a method on the args struct so it can be mocked
+	arrival_seconds := args.getRandomArrival(args.courier_lower_bound,args.courier_upper_bound)
+	//  This doesnt need to be mocked - we can just set the lower and upper bound to zero
 	arrival_seconds := rand.Intn(
 		int(args.courier_upper_bound -
 		args.courier_lower_bound)) +
