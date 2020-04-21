@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"sync"
 	"strings"
+	"log"
 )
 
 func TestRunPrimary(t *testing.T){
@@ -228,8 +229,12 @@ Wait group should be finished.
 		overflow_shelf.contents.Set(order.Id,&order)
 		courier_out := bytes.Buffer{}
 		courier_err := bytes.Buffer{}
+		courier_out_log := log.New(&courier_out,"",0)
+		courier_err_log := log.New(&courier_err,"",0)
 		go courier(&order, overflow_shelf,overflow_shelf,
-			&statistics,&wg,&courier_out, &courier_err,mockTimeNow)
+			&statistics,&wg,
+			courier_out_log,
+			courier_err_log,mockTimeNow)
 		wg.Wait()
 		expected_out := `
 Courier fetched item a with remaining value of 1.00.
@@ -263,8 +268,13 @@ Wait group should be finished.
 		overflow_shelf.contents.Set(order.Id,&order)
 		courier_out := bytes.Buffer{}
 		courier_err := bytes.Buffer{}
+		courier_out_log := log.New(&courier_out,"",0)
+		courier_err_log := log.New(&courier_err,"",0)
 		go courier(&order, overflow_shelf,overflow_shelf,
-			&statistics,&wg,&courier_out, &courier_err,mockTimeNow)
+			&statistics,&wg,
+			courier_out_log,
+			courier_err_log,
+			mockTimeNow)
 		wg.Wait()
 		expected_out := ""
 		expected_err := `

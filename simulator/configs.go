@@ -5,6 +5,8 @@ import (
 	"time"
 	"errors"
 	"math/rand"
+	"log"
+	"os"
 )
 
 type timeFunc func() time.Time
@@ -24,10 +26,11 @@ type SimulatorConfig struct {
 	cold_modifier uint
 	hot_modifier uint
 	frozen_modifier uint
-	courier_out io.Writer
-	courier_err io.Writer
-	dispatch_out io.Writer
-	dispatch_err io.Writer
+	courier_out_log *log.Logger
+	courier_err_log *log.Logger
+	dispatch_out_log *log.Logger
+	dispatch_err_log *log.Logger
+	verbose_log *log.Logger
 	inputSource io.Reader
 	shelves *Shelves
 	verbose bool
@@ -64,6 +67,15 @@ func BuildConfig (overflow_size,hot_size,
 	dead := buildShelf(1,"dead",0)
 	shelves := Shelves{overflow:overflow,cold:cold,frozen:frozen,
 			hot:hot,dead:dead}
+	/*
+	We need to wrap the logs in a log.Logger object.
+	fmt.Fprintf, etc, are not thread-safe. Logger is.
+	*/
+	courier_out_log := log.New(courier_out,"",0)
+	courier_err_log := log.New(courier_err,"",0)
+	dispatch_out_log := log.New(dispatch_out,"",0)
+	dispatch_err_log := log.New(dispatch_err,"",0)
+	verbose_log := log.New(os.Stdout,"Ingested order:",log.Ltime)
 	config := SimulatorConfig{
 		overflow_size:overflow_size,
 		hot_size: hot_size,
@@ -76,10 +88,11 @@ func BuildConfig (overflow_size,hot_size,
 		cold_modifier: cold_modifier,
 		hot_modifier: hot_modifier,
 		frozen_modifier: frozen_modifier,
-		courier_out:courier_out,
-		courier_err:courier_err,
-		dispatch_out:dispatch_out,
-		dispatch_err:dispatch_err,
+		courier_out_log:courier_out_log,
+		courier_err_log:courier_err_log,
+		dispatch_out_log:dispatch_out_log,
+		dispatch_err_log:dispatch_err_log,
+		verbose_log: verbose_log,
 		inputSource:inputSource,
 		shelves: &shelves,
 		verbose: verbose,

@@ -128,6 +128,10 @@ func(s *Shelf) duplicateContentsToSlice(order *Order, with_order bool) []string{
 }
 
 
+/*
+Determine if we can move an at-risk order from the overflow shelf
+in order to prevent it from decaying before pickup
+*/
 func(s *Shelf) swapAssessment(o *Order, overflow *Shelf,statistics *Statistics,getNow timeFunc){
 	/*
 		In the event that we're freeing up space on
