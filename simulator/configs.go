@@ -13,7 +13,10 @@ type timeFunc func() time.Time
 
 type randFunc func(lower_bound int, upper_bound int) int
 
-// Helper struct for keeping argument lengths reasonable.
+/*
+ Helper struct for keeping argument lengths reasonable.
+Access with BuildConfig.
+*/
 type SimulatorConfig struct {
 	overflow_size uint
 	hot_size uint
