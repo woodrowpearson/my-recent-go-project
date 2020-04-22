@@ -4,6 +4,7 @@ import (
 	"./simulator"
 	"flag"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"os"
 )
 
@@ -79,7 +80,7 @@ func main() {
 	statistics := new(simulator.Statistics)
 	statistics = simulator.Run(args, statistics)
 	fmt.Printf("\nOverall Results:\n\n")
-	fmt.Printf("Total Processed: %d\n", statistics.GetTotalProcessed())
+	intconv.Itoa("Total Processed: %d\n", statistics.GetTotalProcessed())
 	fmt.Printf("Total Successes: %d\n", statistics.GetTotalSuccesses())
 	fmt.Printf("Total Failures: %d\n", statistics.GetTotalFailures())
 	fmt.Printf("Total Swapped: %d\n", statistics.GetTotalSwapped())
