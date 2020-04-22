@@ -64,20 +64,20 @@ func(stat *Statistics) update(o *foodOrder, success bool, decayed bool){
 	atomic.AddUint64(&stat.totalProcessed,1)
 }
 
-func(s *Statistics) updateSwapped(){atomic.AddUint64(&s.totalSwapped,1)}
+func(stat *Statistics) updateSwapped() {atomic.AddUint64(&stat.totalSwapped,1)}
 
-func(s *Statistics) GetHotDiscarded() uint64 {return s.hotDiscarded}
-func(s *Statistics) GetColdDiscarded() uint64 {return s.coldDiscarded}
-func(s *Statistics) GetFrozenDiscarded() uint64 {return s.frozenDiscarded}
-func(s *Statistics) GetHotDecayed() uint64 {return s.hotDecayed}
-func(s *Statistics) GetColdDecayed() uint64 {return s.coldDecayed}
-func(s *Statistics) GetFrozenDecayed() uint64 {return s.frozenDecayed}
-func(s *Statistics) GetHotSuccesses() uint64 {return s.hotSuccesses}
-func(s *Statistics) GetColdSuccesses() uint64 {return s.coldSuccesses}
-func(s *Statistics) GetFrozenSuccesses() uint64 {return s.frozenSuccesses}
-func(s *Statistics) GetTotalDiscarded() uint64 {return s.totalDiscarded}
-func(s *Statistics) GetTotalDecayed() uint64 {return s.totalDecayed}
-func(s *Statistics) GetTotalFailures() uint64 {return s.totalFailures}
-func(s *Statistics) GetTotalSuccesses() uint64 {return s.totalSuccesses}
-func(s *Statistics) GetTotalProcessed() uint64 {return s.totalProcessed}
-func(s *Statistics) GetTotalSwapped() uint64 {return s.totalSwapped}
+func(stat *Statistics) GetHotDiscarded() uint64    {return stat.hotDiscarded}
+func(stat *Statistics) GetColdDiscarded() uint64   {return stat.coldDiscarded}
+func(stat *Statistics) GetFrozenDiscarded() uint64 {return stat.frozenDiscarded}
+func(stat *Statistics) GetHotDecayed() uint64      {return stat.hotDecayed}
+func(stat *Statistics) GetColdDecayed() uint64     {return stat.coldDecayed}
+func(stat *Statistics) GetFrozenDecayed() uint64   {return stat.frozenDecayed}
+func(stat *Statistics) GetHotSuccesses() uint64    {return stat.hotSuccesses}
+func(stat *Statistics) GetColdSuccesses() uint64   {return stat.coldSuccesses}
+func(stat *Statistics) GetFrozenSuccesses() uint64 {return stat.frozenSuccesses}
+func(stat *Statistics) GetTotalDiscarded() uint64  {return stat.totalDiscarded}
+func(stat *Statistics) GetTotalDecayed() uint64    {return stat.totalDecayed}
+func(stat *Statistics) GetTotalFailures() uint64   {return stat.totalFailures}
+func(stat *Statistics) GetTotalSuccesses() uint64  {return stat.totalSuccesses}
+func(stat *Statistics) GetTotalProcessed() uint64  {return stat.totalProcessed}
+func(stat *Statistics) GetTotalSwapped() uint64    {return stat.totalSwapped}

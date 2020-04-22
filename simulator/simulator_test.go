@@ -1,11 +1,11 @@
 package simulator
 
 import (
-	"testing"
 	"bytes"
-	"sync"
-	"strings"
 	"log"
+	"strings"
+	"sync"
+	"testing"
 )
 
 func TestRunPrimary(t *testing.T){
@@ -14,10 +14,10 @@ func TestRunPrimary(t *testing.T){
 		All orders will be flushed simultaneously.
 		Purpose of this test is to smoke test the ingestion pipeline
 		+
-		
+
 	*/
 
-	orders_as_string := `[
+	ordersAsString := `[
   {
     "id": "a8cfcb76-7f24-4420-a5ba-d46dd77bdffd",
     "name": "Banana Split",
@@ -49,14 +49,14 @@ func TestRunPrimary(t *testing.T){
 ]`
 
 
-	courier_out,courier_err := bytes.Buffer{},bytes.Buffer{}
-	dispatch_err,dispatch_out := bytes.Buffer{},bytes.Buffer{}
-	inputSource := strings.NewReader(orders_as_string)
+	courierOut, courierErr := bytes.Buffer{},bytes.Buffer{}
+	dispatchErr, dispatchOut := bytes.Buffer{},bytes.Buffer{}
+	inputSource := strings.NewReader(ordersAsString)
 	overflowSize,hotSize,coldSize,frozenSize := 15,10,10,10
 	// make courier arrive instantaneously
 	courierLowerBound,courierUpperBound := 0,0
 	ordersPerSecond := 0
-	overflow_modifier,cold_modifier,hot_modifier,frozen_modifier := 1,1,1,1
+	overflowModifier, coldModifier, hotModifier, frozenModifier := 1,1,1,1
 	args, err := BuildConfig(
 		uint(overflowSize),
 		uint(hotSize),
@@ -65,14 +65,14 @@ func TestRunPrimary(t *testing.T){
 		uint(courierLowerBound),
 		uint(courierUpperBound),
 		uint(ordersPerSecond),
-		uint(overflow_modifier),
-		uint(cold_modifier),
-		uint(hot_modifier),
-		uint(frozen_modifier),
-		&courier_out,
-		&courier_err,
-		&dispatch_out,
-		&dispatch_err,
+		uint(overflowModifier),
+		uint(coldModifier),
+		uint(hotModifier),
+		uint(frozenModifier),
+		&courierOut,
+		&courierErr,
+		&dispatchOut,
+		&dispatchErr,
 		inputSource,
 		false,
 	)
@@ -80,8 +80,8 @@ func TestRunPrimary(t *testing.T){
 	args.getRandRange = mockGetRandRange
 	statistics := new(Statistics)
 	statistics = Run(args,statistics)
-	assertStrings(t,courier_err.String(),"")
-	assertStrings(t,dispatch_err.String(),"")
+	assertStrings(t, courierErr.String(),"")
+	assertStrings(t, dispatchErr.String(),"")
 	assertUint64(t,statistics.GetTotalProcessed(),4)
 	assertUint64(t,statistics.GetTotalSuccesses(),4)
 	assertUint64(t,statistics.GetColdSuccesses(),2)
@@ -103,14 +103,14 @@ to the dispatch_out io.Writer.
 	t.Run(msg, func(t *testing.T){
 		statistics := Statistics{}
 		var wg sync.WaitGroup
-		courier_out,courier_err := bytes.Buffer{},bytes.Buffer{}
-		dispatch_err,dispatch_out := bytes.Buffer{},bytes.Buffer{}
+		courierOut, courierErr := bytes.Buffer{},bytes.Buffer{}
+		dispatchErr, dispatchOut := bytes.Buffer{},bytes.Buffer{}
 		inputSource := strings.NewReader("Dummy")
 		overflowSize,hotSize,coldSize,frozenSize := 1,1,1,1
 		// make courier arrive instantaneously
 		courierLowerBound,courierUpperBound := 0,0
 		ordersPerSecond := 1
-		overflow_modifier,cold_modifier,hot_modifier,frozen_modifier := 1,1,1,1
+		overflowModifier, coldModifier, hotModifier, frozenModifier := 1,1,1,1
 		args, err := BuildConfig(
 			uint(overflowSize),
 			uint(hotSize),
@@ -119,14 +119,14 @@ to the dispatch_out io.Writer.
 			uint(courierLowerBound),
 			uint(courierUpperBound),
 			uint(ordersPerSecond),
-			uint(overflow_modifier),
-			uint(cold_modifier),
-			uint(hot_modifier),
-			uint(frozen_modifier),
-			&courier_out,
-			&courier_err,
-			&dispatch_out,
-			&dispatch_err,
+			uint(overflowModifier),
+			uint(coldModifier),
+			uint(hotModifier),
+			uint(frozenModifier),
+			&courierOut,
+			&courierErr,
+			&dispatchOut,
+			&dispatchErr,
 			inputSource,
 			false,
 		)
@@ -135,15 +135,15 @@ to the dispatch_out io.Writer.
 		order := foodOrder{Id:"a",Name:"dummy",Temp:"hot",ShelfLife:200,DecayRate:1}
 		dispatch(&order, args,&statistics,&wg)
 		wg.Wait()
-		out_res := dispatch_out.String()
-		err_res := dispatch_err.String()
-		expected_out := `
+		outRes := dispatchOut.String()
+		errRes := dispatchErr.String()
+		expectedOut := `
 Dispatched order a to courier.
 Current shelf: overflow.
 Current shelf contents: [a].
 `
-		assertStrings(t,err_res,"")
-		assertStrings(t,out_res,expected_out)
+		assertStrings(t, errRes,"")
+		assertStrings(t, outRes, expectedOut)
 
 	})
 
@@ -155,14 +155,14 @@ message to the dispatch_err io.Writer.
 	t.Run(msg,func(t *testing.T){
 		statistics := Statistics{}
 		var wg sync.WaitGroup
-		courier_out,courier_err := bytes.Buffer{},bytes.Buffer{}
-		dispatch_err,dispatch_out := bytes.Buffer{},bytes.Buffer{}
+		courierOut, courierErr := bytes.Buffer{},bytes.Buffer{}
+		dispatchErr, dispatchOut := bytes.Buffer{},bytes.Buffer{}
 		inputSource := strings.NewReader("Dummy")
 		overflowSize,hotSize,coldSize,frozenSize := 0,0,0,0
 		// make courier arrive instantaneously
 		courierLowerBound,courierUpperBound := 0,0
 		ordersPerSecond := 1
-		overflow_modifier,cold_modifier,hot_modifier,frozen_modifier := 0,0,0,0
+		overflowModifier, coldModifier, hotModifier, frozenModifier := 0,0,0,0
 		args, err := BuildConfig(
 			uint(overflowSize),
 			uint(hotSize),
@@ -171,14 +171,14 @@ message to the dispatch_err io.Writer.
 			uint(courierLowerBound),
 			uint(courierUpperBound),
 			uint(ordersPerSecond),
-			uint(overflow_modifier),
-			uint(cold_modifier),
-			uint(hot_modifier),
-			uint(frozen_modifier),
-			&courier_out,
-			&courier_err,
-			&dispatch_out,
-			&dispatch_err,
+			uint(overflowModifier),
+			uint(coldModifier),
+			uint(hotModifier),
+			uint(frozenModifier),
+			&courierOut,
+			&courierErr,
+			&dispatchOut,
+			&dispatchErr,
 			inputSource,
 			false,
 		)
@@ -187,12 +187,12 @@ message to the dispatch_err io.Writer.
 		order := foodOrder{Id:"a",Name:"dummy",Temp:"hot",ShelfLife:200,DecayRate:1}
 		dispatch(&order, args,&statistics,&wg)
 		wg.Wait()
-		out_res := dispatch_out.String()
-		err_res := dispatch_err.String()
-		expected_err := `Order a discarded due to lack of capacity.
+		outRes := dispatchOut.String()
+		errRes := dispatchErr.String()
+		expectedErr := `Order a discarded due to lack of capacity.
 `
-		assertStrings(t,out_res,"")
-		assertStrings(t,err_res,expected_err)
+		assertStrings(t, outRes,"")
+		assertStrings(t, errRes, expectedErr)
 		assertUint64(t,statistics.GetTotalFailures(),1)
 		assertUint64(t,statistics.GetTotalDiscarded(),1)
 		assertUint64(t,statistics.GetTotalProcessed(),1)
@@ -222,30 +222,30 @@ Wait group should be finished.
 		statistics := Statistics{}
 		var wg sync.WaitGroup
 		wg.Add(1)
-		overflow_shelf := buildOrderShelf(1,"overflow",0)
+		overflowShelf := buildOrderShelf(1,"overflow",0)
 		order := foodOrder{Id:"a",Name:"dummy",Temp:"hot",ShelfLife:12,DecayRate:1,
 				IsCritical:false,placementTime:mockTimeNow(),
-				arrivalTime:mockTimeNow(),shelf:overflow_shelf,DecayScore:1.00}
-		overflow_shelf.contents.Set(order.Id,&order)
-		courier_out := bytes.Buffer{}
-		courier_err := bytes.Buffer{}
-		courier_out_log := log.New(&courier_out,"",0)
-		courier_err_log := log.New(&courier_err,"",0)
-		go courier(&order, overflow_shelf,overflow_shelf,
+				arrivalTime:mockTimeNow(),shelf: overflowShelf,DecayScore:1.00}
+		overflowShelf.contents.Set(order.Id,&order)
+		courierOut := bytes.Buffer{}
+		courierErr := bytes.Buffer{}
+		courierOutLog := log.New(&courierOut,"",0)
+		courierErrLog := log.New(&courierErr,"",0)
+		go courier(&order, overflowShelf, overflowShelf,
 			&statistics,&wg,
-			courier_out_log,
-			courier_err_log,mockTimeNow)
+			courierOutLog,
+			courierErrLog,mockTimeNow)
 		wg.Wait()
-		expected_out := `
+		expectedOut := `
 Courier fetched item a with remaining value of 1.00.
 Current shelf: overflow.
 Current shelf contents: [].
 `
-		expected_err := ""
-		out_res := courier_out.String()
-		err_res := courier_err.String()
-		assertStrings(t,out_res,expected_out)
-		assertStrings(t,err_res,expected_err)
+		expectedErr := ""
+		outRes := courierOut.String()
+		errRes := courierErr.String()
+		assertStrings(t, outRes, expectedOut)
+		assertStrings(t, errRes, expectedErr)
 		assertUint64(t,statistics.GetTotalProcessed(),1)
 		assertUint64(t,statistics.GetTotalSuccesses(),1)
 		assertUint64(t,statistics.GetHotSuccesses(),1)
@@ -261,31 +261,31 @@ Wait group should be finished.
 		statistics := Statistics{}
 		var wg sync.WaitGroup
 		wg.Add(1)
-		overflow_shelf := buildOrderShelf(1,"overflow",0)
+		overflowShelf := buildOrderShelf(1,"overflow",0)
 		order := foodOrder{Id:"a",Name:"dummy",Temp:"hot",ShelfLife:12,DecayRate:1,
 				IsCritical:true,placementTime:mockTimeNow(),
-				arrivalTime:mockTimeNow(),shelf:overflow_shelf,DecayScore:0.00}
-		overflow_shelf.contents.Set(order.Id,&order)
-		courier_out := bytes.Buffer{}
-		courier_err := bytes.Buffer{}
-		courier_out_log := log.New(&courier_out,"",0)
-		courier_err_log := log.New(&courier_err,"",0)
-		go courier(&order, overflow_shelf,overflow_shelf,
+				arrivalTime:mockTimeNow(),shelf: overflowShelf,DecayScore:0.00}
+		overflowShelf.contents.Set(order.Id,&order)
+		courierOut := bytes.Buffer{}
+		courierErr := bytes.Buffer{}
+		courierOutLog := log.New(&courierOut,"",0)
+		courierErrLog := log.New(&courierErr,"",0)
+		go courier(&order, overflowShelf, overflowShelf,
 			&statistics,&wg,
-			courier_out_log,
-			courier_err_log,
+			courierOutLog,
+			courierErrLog,
 			mockTimeNow)
 		wg.Wait()
-		expected_out := ""
-		expected_err := `
+		expectedOut := ""
+		expectedErr := `
 Discarded item with id a due to expiration value of 0.00.
 Current shelf: overflow.
 Current shelf contents: [].
 `
-		out_res := courier_out.String()
-		err_res := courier_err.String()
-		assertStrings(t,out_res,expected_out)
-		assertStrings(t,err_res,expected_err)
+		outRes := courierOut.String()
+		errRes := courierErr.String()
+		assertStrings(t, outRes, expectedOut)
+		assertStrings(t, errRes, expectedErr)
 		assertUint64(t,statistics.GetTotalProcessed(),1)
 		assertUint64(t,statistics.GetTotalFailures(),1)
 		assertUint64(t,statistics.GetTotalDecayed(),1)

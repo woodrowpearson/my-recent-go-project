@@ -2,10 +2,10 @@ package simulator
 
 
 import (
-	"time"
-	"sync"
-	"math/rand"
 	"log"
+	"math/rand"
+	"sync"
+	"time"
 )
 
 func check(e error){
@@ -23,20 +23,20 @@ func courier(order *foodOrder, shelf *orderShelf,
 		overflow *orderShelf,
 		statistics *Statistics,
 		wg *sync.WaitGroup,
-		courier_out_log *log.Logger,
-		courier_err_log *log.Logger,
+		courierOutLog *log.Logger,
+		courierErrLog *log.Logger,
 		getNow timeFunc){
 	time.Sleep(time.Until(order.arrivalTime))
 
 	contents := shelf.duplicateContentsToSlice(order,false)
-	if (order.IsCritical){
+	if order.IsCritical {
 		// Decayed
 		statistics.update(order,false,true)
-		courier_err_log.Printf(PickupErrMsg,order.Id,order.DecayScore,shelf.name,contents)
+		courierErrLog.Printf(PickupErrMsg,order.Id,order.DecayScore,shelf.name,contents)
 	} else {
 		// Success
 		statistics.update(order,true,false)
-		courier_out_log.Printf(PickupSuccessMsg,order.Id,order.DecayScore,shelf.name,contents)
+		courierOutLog.Printf(PickupSuccessMsg,order.Id,order.DecayScore,shelf.name,contents)
 	}
 	shelf.swapAssessment(order,overflow,statistics,getNow)
 	wg.Done()
@@ -47,7 +47,7 @@ Determines when the courier will arrive, selects a shelf for placement,
 places the item on the shelf, and dispatches a courier.
 If there is no shelf space, logs a dispatching error message.
 */
-func dispatch(o *foodOrder,  args *SimulatorConfig,
+func dispatch(o *foodOrder,  args *Config,
 	statistics *Statistics,
 	wg *sync.WaitGroup){
 	/*
@@ -55,21 +55,21 @@ func dispatch(o *foodOrder,  args *SimulatorConfig,
 		rand.Intn will not accept a range of 0,
 		which we need for the tests.
 	*/
-	arrival_seconds := args.getRandRange(int(args.courier_lower_bound),int(args.courier_upper_bound))
-	shelf := o.selectShelf(args.shelves,arrival_seconds,args.getNow)
+	arrivalSeconds := args.getRandRange(int(args.courierLowerBound),int(args.courierUpperBound))
+	shelf := o.selectShelf(args.shelves, arrivalSeconds,args.getNow)
 	if shelf != args.shelves.dead {
 		wg.Add(1)
 		contents := shelf.duplicateContentsToSlice(o,true)
-		args.dispatch_out_log.Printf(DispatchSuccessMsg,o.Id,shelf.name,contents)
+		args.dispatchOutLog.Printf(DispatchSuccessMsg,o.Id,shelf.name,contents)
 		go courier(o,shelf,args.shelves.overflow,
 			statistics,wg,
-			args.courier_out_log,
-			args.courier_err_log,
+			args.courierOutLog,
+			args.courierErrLog,
 			args.getNow)
 	} else {
 		// Discarded due to space.
 		statistics.update(o,false,false)
-		args.dispatch_err_log.Printf(DispatchErrMsg,o.Id)
+		args.dispatchErrLog.Printf(DispatchErrMsg,o.Id)
 	}
 }
 /*
@@ -77,7 +77,7 @@ Runs a simulator and returns statistics upon completion.
 Statistics struct is passed in to allow for access to statistics
 while the process is running.
 */
-func Run(args *SimulatorConfig,statistics *Statistics) *Statistics {
+func Run(args *Config,statistics *Statistics) *Statistics {
 	// Need to seed the rand global to get proper randomness.
 	rand.Seed(time.Now().UnixNano())
 	var wg sync.WaitGroup
@@ -89,7 +89,7 @@ func Run(args *SimulatorConfig,statistics *Statistics) *Statistics {
 		case v,ok := <-resultChannel:
 			if ok {
 				if args.verbose {
-					args.verbose_log.Printf("%+v\n",&v)
+					args.verboseLog.Printf("%+v\n",&v)
 				}
 				dispatch(&v,args,statistics,&wg)
 			} else {

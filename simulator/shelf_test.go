@@ -29,32 +29,32 @@ it has been picked up).
 
 	t.Run(msg, func(t *testing.T){
 		statistics := Statistics{}
-		overflow_shelf := buildOrderShelf(1,"overflow",4)
-		hot_shelf := buildOrderShelf(1,"hot",1)
+		overflowShelf := buildOrderShelf(1,"overflow",4)
+		hotShelf := buildOrderShelf(1,"hot",1)
 
-		mock_now := mockTimeNow()
-		one_second_ago := mock_now.Add(time.Second*time.Duration(-1))
-		arrival_time := one_second_ago.Add(time.Second*time.Duration(7))
-		critical_order := foodOrder{Id:"a",Name:"dummy",Temp:"hot",ShelfLife:12,DecayRate:1,
-				IsCritical:true,placementTime:one_second_ago,
-				arrivalTime:arrival_time,shelf:overflow_shelf}
-		critical_order.DecayScore = critical_order.computeDecayScore(overflow_shelf.modifier,7*1000)
-		overflow_shelf.criticals.Set(critical_order.Id,&critical_order)
-		overflow_shelf.contents.Set(critical_order.Id,&critical_order)
+		mockNow := mockTimeNow()
+		oneSecondAgo := mockNow.Add(time.Second*time.Duration(-1))
+		arrivalTime := oneSecondAgo.Add(time.Second*time.Duration(7))
+		criticalOrder := foodOrder{Id: "a",Name:"dummy",Temp:"hot",ShelfLife:12,DecayRate:1,
+				IsCritical:true,placementTime: oneSecondAgo,
+				arrivalTime: arrivalTime,shelf: overflowShelf}
+		criticalOrder.DecayScore = criticalOrder.computeDecayScore(overflowShelf.modifier,7*1000)
+		overflowShelf.criticals.Set(criticalOrder.Id,&criticalOrder)
+		overflowShelf.contents.Set(criticalOrder.Id,&criticalOrder)
 
-		safe_order := foodOrder{Id:"b",Name:"dummy2",Temp:"hot",ShelfLife:12,DecayRate:1,
-				IsCritical:false,placementTime:one_second_ago,
-				arrivalTime:arrival_time,shelf:hot_shelf,DecayScore:1}
-		hot_shelf.contents.Set(safe_order.Id,&safe_order)
+		safeOrder := foodOrder{Id: "b",Name:"dummy2",Temp:"hot",ShelfLife:12,DecayRate:1,
+				IsCritical:false,placementTime: oneSecondAgo,
+				arrivalTime: arrivalTime,shelf: hotShelf,DecayScore:1}
+		hotShelf.contents.Set(safeOrder.Id,&safeOrder)
 
-		hot_shelf.swapAssessment(&safe_order,overflow_shelf,&statistics,mockTimeNow)
-		hot_shelf_contents := hot_shelf.duplicateContentsToMap(&safe_order,true)
-		hot_shelf_order := castToOrder(hot_shelf_contents["a"])
-		assertOrder(t,hot_shelf_order,&critical_order)
-		assertInt32(t,hot_shelf.counter,int32(1))
-		assertInt32(t,overflow_shelf.counter, int32(2))
-		assertBoolean(t,overflow_shelf.contents.IsEmpty(),true)
-		assertBoolean(t,overflow_shelf.criticals.IsEmpty(),true)
+		hotShelf.swapAssessment(&safeOrder, overflowShelf,&statistics,mockTimeNow)
+		hotShelfContents := hotShelf.duplicateContentsToMap(&safeOrder,true)
+		hotShelfOrder := castToOrder(hotShelfContents["a"])
+		assertOrder(t, hotShelfOrder,&criticalOrder)
+		assertInt32(t, hotShelf.counter,int32(1))
+		assertInt32(t, overflowShelf.counter, int32(2))
+		assertBoolean(t, overflowShelf.contents.IsEmpty(),true)
+		assertBoolean(t, overflowShelf.criticals.IsEmpty(),true)
 		assertUint64(t,statistics.GetTotalSwapped(),1)
 	})
 
@@ -66,20 +66,20 @@ and available count increased by one.
 `
 	t.Run(msg,func(t *testing.T){
 		statistics := Statistics{}
-		overflow_shelf := buildOrderShelf(1,"overflow",4)
-		hot_shelf := buildOrderShelf(1,"hot",1)
+		overflowShelf := buildOrderShelf(1,"overflow",4)
+		hotShelf := buildOrderShelf(1,"hot",1)
 
-		mock_now := mockTimeNow()
-		one_second_ago := mock_now.Add(time.Second*time.Duration(-1))
-		arrival_time := one_second_ago.Add(time.Second*time.Duration(7))
-		safe_order := foodOrder{Id:"b",Name:"dummy2",Temp:"hot",ShelfLife:12,DecayRate:1,
-				IsCritical:false,placementTime:one_second_ago,
-				arrivalTime:arrival_time,shelf:hot_shelf,DecayScore:1}
-		hot_shelf.contents.Set(safe_order.Id,&safe_order)
-		hot_shelf.swapAssessment(&safe_order,overflow_shelf,&statistics,mockTimeNow)
-		assertInt32(t,hot_shelf.counter,int32(2))
-		assertInt32(t,overflow_shelf.counter,int32(1))
-		assertBoolean(t,hot_shelf.contents.IsEmpty(),true)
+		mockNow := mockTimeNow()
+		oneSecondAgo := mockNow.Add(time.Second*time.Duration(-1))
+		arrivalTime := oneSecondAgo.Add(time.Second*time.Duration(7))
+		safeOrder := foodOrder{Id: "b",Name:"dummy2",Temp:"hot",ShelfLife:12,DecayRate:1,
+				IsCritical:false,placementTime: oneSecondAgo,
+				arrivalTime: arrivalTime,shelf: hotShelf,DecayScore:1}
+		hotShelf.contents.Set(safeOrder.Id,&safeOrder)
+		hotShelf.swapAssessment(&safeOrder, overflowShelf,&statistics,mockTimeNow)
+		assertInt32(t, hotShelf.counter,int32(2))
+		assertInt32(t, overflowShelf.counter,int32(1))
+		assertBoolean(t, hotShelf.contents.IsEmpty(),true)
 		assertUint64(t,statistics.GetTotalSwapped(),0)
 	})
 
@@ -90,21 +90,21 @@ and available count increased by one.
 `
 	t.Run(msg, func(t *testing.T){
 		statistics := Statistics{}
-		overflow_shelf := buildOrderShelf(1,"overflow",4)
-		hot_shelf := buildOrderShelf(1,"hot",1)
+		overflowShelf := buildOrderShelf(1,"overflow",4)
+		hotShelf := buildOrderShelf(1,"hot",1)
 
-		mock_now := mockTimeNow()
-		one_second_ago := mock_now.Add(time.Second*time.Duration(-1))
-		arrival_time := one_second_ago.Add(time.Second*time.Duration(7))
-		safe_order := foodOrder{Id:"b",Name:"dummy2",Temp:"cold",ShelfLife:1000,DecayRate:1,
-				IsCritical:false,placementTime:one_second_ago,
-				arrivalTime:arrival_time,shelf:overflow_shelf,DecayScore:1}
-		overflow_shelf.contents.Set(safe_order.Id,&safe_order)
-		overflow_shelf.swapAssessment(&safe_order,overflow_shelf,&statistics,mockTimeNow)
-		assertInt32(t,hot_shelf.counter,int32(1))
-		assertInt32(t,overflow_shelf.counter,int32(2))
-		assertBoolean(t,hot_shelf.contents.IsEmpty(),true)
-		assertBoolean(t,overflow_shelf.contents.IsEmpty(),true)
+		mockNow := mockTimeNow()
+		oneSecondAgo := mockNow.Add(time.Second*time.Duration(-1))
+		arrivalTime := oneSecondAgo.Add(time.Second*time.Duration(7))
+		safeOrder := foodOrder{Id: "b",Name:"dummy2",Temp:"cold",ShelfLife:1000,DecayRate:1,
+				IsCritical:false,placementTime: oneSecondAgo,
+				arrivalTime: arrivalTime,shelf: overflowShelf,DecayScore:1}
+		overflowShelf.contents.Set(safeOrder.Id,&safeOrder)
+		overflowShelf.swapAssessment(&safeOrder, overflowShelf,&statistics,mockTimeNow)
+		assertInt32(t, hotShelf.counter,int32(1))
+		assertInt32(t, overflowShelf.counter,int32(2))
+		assertBoolean(t, hotShelf.contents.IsEmpty(),true)
+		assertBoolean(t, overflowShelf.contents.IsEmpty(),true)
 		assertUint64(t,statistics.GetTotalSwapped(),0)
 	})
 
@@ -121,19 +121,19 @@ func TestSelectCritical(t *testing.T){
 			and read the comments there.
 
 			We're going to verify that the order itself
-			gets returned 
+			gets returned
 		*/
-		overflow_shelf := buildOrderShelf(1,"overflow",4)
-		hot_shelf := buildOrderShelf(1,"hot",1)
-		mock_now := mockTimeNow()
-		one_second_ago := mock_now.Add(time.Second*time.Duration(-1))
-		arrival_time := one_second_ago.Add(time.Second*time.Duration(7))
+		overflowShelf := buildOrderShelf(1,"overflow",4)
+		hotShelf := buildOrderShelf(1,"hot",1)
+		mockNow := mockTimeNow()
+		oneSecondAgo := mockNow.Add(time.Second*time.Duration(-1))
+		arrivalTime := oneSecondAgo.Add(time.Second*time.Duration(7))
 		order := foodOrder{Id:"a",Name:"dummy",Temp:"hot",ShelfLife:12,DecayRate:1,
-				IsCritical:true,placementTime:one_second_ago,
-				arrivalTime:arrival_time,shelf:overflow_shelf}
-		order.DecayScore = order.computeDecayScore(overflow_shelf.modifier,7*1000)
-		overflow_shelf.criticals.Set(order.Id,&order)
-		res := hot_shelf.selectCritical(overflow_shelf,mockTimeNow)
+				IsCritical:true,placementTime: oneSecondAgo,
+				arrivalTime: arrivalTime,shelf: overflowShelf}
+		order.DecayScore = order.computeDecayScore(overflowShelf.modifier,7*1000)
+		overflowShelf.criticals.Set(order.Id,&order)
+		res := hotShelf.selectCritical(overflowShelf,mockTimeNow)
 		assertOrder(t,res,&order)
 	})
 
@@ -144,17 +144,17 @@ func TestSelectCritical(t *testing.T){
 			selectCritical is on a hot shelf, we only
 			have a cold order in overflow
 		*/
-		overflow_shelf := buildOrderShelf(1,"overflow",4)
-		hot_shelf := buildOrderShelf(1,"hot",1)
-		mock_now := mockTimeNow()
-		one_second_ago := mock_now.Add(time.Second*time.Duration(-1))
-		arrival_time := one_second_ago.Add(time.Second*time.Duration(7))
+		overflowShelf := buildOrderShelf(1,"overflow",4)
+		hotShelf := buildOrderShelf(1,"hot",1)
+		mockNow := mockTimeNow()
+		oneSecondAgo := mockNow.Add(time.Second*time.Duration(-1))
+		arrivalTime := oneSecondAgo.Add(time.Second*time.Duration(7))
 		order := foodOrder{Id:"a",Name:"dummy",Temp:"cold",ShelfLife:12,DecayRate:1,
-				IsCritical:true,placementTime:one_second_ago,
-				arrivalTime:arrival_time,shelf:overflow_shelf}
-		order.DecayScore = order.computeDecayScore(overflow_shelf.modifier,7*1000)
-		overflow_shelf.criticals.Set(order.Id,&order)
-		res := hot_shelf.selectCritical(overflow_shelf,mockTimeNow)
+				IsCritical:true,placementTime: oneSecondAgo,
+				arrivalTime: arrivalTime,shelf: overflowShelf}
+		order.DecayScore = order.computeDecayScore(overflowShelf.modifier,7*1000)
+		overflowShelf.criticals.Set(order.Id,&order)
+		res := hotShelf.selectCritical(overflowShelf,mockTimeNow)
 		assertOrder(t,res,nil)
 
 	})

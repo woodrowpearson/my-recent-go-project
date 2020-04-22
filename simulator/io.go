@@ -12,7 +12,7 @@ Ingest and parse inputs from an io.Reader in a streaming manner.
 Adds an artificial pause between blocks of orders if configured
 with an order rate of > 0. An order rate of 0 introduces no pause.
 */
-func streamFromSource(inputSource io.Reader, resultChannel chan foodOrder, args *SimulatorConfig){
+func streamFromSource(inputSource io.Reader, resultChannel chan foodOrder, args *Config){
 	/*
 		a websocket can be represented by an io.Reader
 		For the purposes of the default, it will be a file.
@@ -41,7 +41,7 @@ func streamFromSource(inputSource io.Reader, resultChannel chan foodOrder, args 
 			Adds an artificial pause for simulating input rates.
 			If there is no pause, input rate is controlled by the inputSource's supplier.
 		*/
-		if args.orders_per_second > 0 && ct == args.orders_per_second {
+		if args.ordersPerSecond > 0 && ct == args.ordersPerSecond {
 			ct = 0
 			time.Sleep(1*time.Second)
 		}

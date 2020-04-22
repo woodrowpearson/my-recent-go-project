@@ -1,8 +1,8 @@
 package simulator
 
 import (
-	"sync/atomic"
 	"github.com/orcaman/concurrent-map"
+	"sync/atomic"
 )
 
 
@@ -18,11 +18,11 @@ type orderShelf struct {
 /*
 Helper function for constructing shelf struct.
 */
-func buildOrderShelf(array_capacity uint, name string,
+func buildOrderShelf(arrayCapacity uint, name string,
 		modifier uint) *orderShelf {
 	shelf := new(orderShelf)
-	shelf.name = name;
-	shelf.counter = int32(array_capacity)
+	shelf.name = name
+	shelf.counter = int32(arrayCapacity)
 	shelf.modifier = modifier
 	shelf.contents = cmap.New()
 	shelf.criticals = cmap.New()
@@ -33,12 +33,12 @@ func buildOrderShelf(array_capacity uint, name string,
 Removes an order from a shelf and updates capacity counter in a threadsafe manner.
 Removes order from at-risk map if order is at-risk.
 */
-func (s *orderShelf) incrementAndUpdate(o *foodOrder,remove_from_criticals bool){
+func (s *orderShelf) incrementAndUpdate(o *foodOrder, removeFromCriticals bool){
 	/*
 		removes item from shelf
 	*/
 	s.contents.Remove(o.Id)
-	if remove_from_criticals {
+	if removeFromCriticals {
 		s.criticals.Remove(o.Id)
 	}
 	atomic.AddInt32(&s.counter,1)
@@ -53,7 +53,7 @@ func (s *orderShelf) decrementAndUpdate(o *foodOrder) {
 	if o.IsCritical {
 		s.criticals.Set(o.Id,o)
 	}
-	atomic.AddInt32(&s.counter, -1);
+	atomic.AddInt32(&s.counter, -1)
 }
 
 /*
@@ -88,9 +88,9 @@ func(s *orderShelf) selectCritical(overflow *orderShelf,getNow timeFunc) *foodOr
 }
 
 /*
-Pushes keys of shelf contents to a slice in a threadsafe manner for logging purposes. 
+Pushes keys of shelf contents to a slice in a threadsafe manner for logging purposes.
 */
-func(s *orderShelf) duplicateContentsToMap(order *foodOrder,with_order bool) map[string]*foodOrder {
+func(s *orderShelf) duplicateContentsToMap(order *foodOrder, withOrder bool) map[string]*foodOrder {
 	/*
 	Range expression is evaluated once, at the start.
 	we're doing this to make a copy of the current shelf,
@@ -100,7 +100,7 @@ func(s *orderShelf) duplicateContentsToMap(order *foodOrder,with_order bool) map
 	contents := make(map[string]*foodOrder)
 	for _, v := range s.contents.Items(){
 		o := castToOrder(v)
-		if with_order || (o.Id != order.Id){
+		if withOrder || (o.Id != order.Id){
 			contents[o.Id] = o
 		}
 	}
@@ -108,19 +108,19 @@ func(s *orderShelf) duplicateContentsToMap(order *foodOrder,with_order bool) map
 }
 
 /*
-Pushes keys of shelf contents to a slice in a threadsafe manner for logging purposes. 
+Pushes keys of shelf contents to a slice in a threadsafe manner for logging purposes.
 */
-func(s *orderShelf) duplicateContentsToSlice(order *foodOrder, with_order bool) []string{
+func(s *orderShelf) duplicateContentsToSlice(order *foodOrder, withOrder bool) []string{
 	/*
 	Range expression is evaluated once, at the start.
 	we're doing this to make a copy of the current shelf,
 	so that we don't risk weirdness in printing shelf contents
 	based on the concurrent maps.
 	*/
-	contents := []string{}
+	var contents []string
 	for _,v := range s.contents.Items(){
 		o := castToOrder(v)
-		if with_order || (o.Id != order.Id){
+		if withOrder || (o.Id != order.Id){
 			contents = append(contents,o.Id)
 		}
 	}
@@ -144,11 +144,11 @@ func(s *orderShelf) swapAssessment(o *foodOrder, overflow *orderShelf,statistics
 		and run incrementAndUpdate on the overflow shelf.
 	*/
 	if s != overflow {
-		to_swap := s.selectCritical(overflow,getNow)
-		if to_swap != nil{
-			overflow.incrementAndUpdate(to_swap,true)
+		toSwap := s.selectCritical(overflow,getNow)
+		if toSwap != nil{
+			overflow.incrementAndUpdate(toSwap,true)
 			s.contents.Remove(o.Id)
-			s.contents.Set(to_swap.Id,to_swap)
+			s.contents.Set(toSwap.Id, toSwap)
 			statistics.updateSwapped()
 		} else {
 			/*

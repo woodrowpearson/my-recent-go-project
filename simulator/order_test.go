@@ -14,8 +14,8 @@ func TestSwapWillPreserve(t *testing.T){
 				Order has a shelf life of twelve seconds.
 				Courier will arrive in seven seconds.
 				one second has elapsed, with a decay rate of 1
-				and a modifier of four. 
-				This means the current elapsed score is 
+				and a modifier of four.
+				This means the current elapsed score is
 					(12 - (1 second)*4*1)/12 => 0.67
 				but the final score would be:
 					(12 - (7 seconds)*1*4)/12 => -1.33 (failing)
@@ -26,23 +26,23 @@ func TestSwapWillPreserve(t *testing.T){
 					(12 - (6 seconds)*1)/12 => 0.5 (on new shelf)
 				for a total of 1.17, which will let the order survive.
 		*/
-		overflow_shelf := buildOrderShelf(1,"overflow",4)
-		hot_shelf := buildOrderShelf(1,"hot",1)
-		mock_now := mockTimeNow()
-		one_second_ago := mock_now.Add(time.Second*time.Duration(-1))
-		arrival_time := one_second_ago.Add(time.Second*time.Duration(7))
+		overflowShelf := buildOrderShelf(1,"overflow",4)
+		hotShelf := buildOrderShelf(1,"hot",1)
+		mockNow := mockTimeNow()
+		oneSecondAgo := mockNow.Add(time.Second*time.Duration(-1))
+		arrivalTime := oneSecondAgo.Add(time.Second*time.Duration(7))
 		order := foodOrder{Id:"a",Name:"dummy",Temp:"hot",ShelfLife:12,DecayRate:1,
-				IsCritical:true,placementTime:one_second_ago,
-				arrivalTime:arrival_time,shelf:overflow_shelf}
-		order.DecayScore = order.computeDecayScore(overflow_shelf.modifier,7*1000)
+				IsCritical:true,placementTime: oneSecondAgo,
+				arrivalTime: arrivalTime,shelf: overflowShelf}
+		order.DecayScore = order.computeDecayScore(overflowShelf.modifier,7*1000)
 		assertFloat32(t,order.DecayScore,float32(-4)/float32(3))
-		res := order.swapWillPreserve(hot_shelf.modifier,mockTimeNow)
+		res := order.swapWillPreserve(hotShelf.modifier,mockTimeNow)
 		assertBoolean(t,res,true)
 		assertBoolean(t,order.IsCritical,false)
-		expected_elapsed_score := order.computeDecayScore(overflow_shelf.modifier,1000)
-		expected_new_shelf_score := order.computeDecayScore(hot_shelf.modifier,6000)
-		expected_prospective_score := expected_elapsed_score + expected_new_shelf_score
-		assertFloat32(t,order.DecayScore,expected_prospective_score)
+		expectedElapsedScore := order.computeDecayScore(overflowShelf.modifier,1000)
+		expectedNewShelfScore := order.computeDecayScore(hotShelf.modifier,6000)
+		expectedProspectiveScore := expectedElapsedScore + expectedNewShelfScore
+		assertFloat32(t,order.DecayScore, expectedProspectiveScore)
 	})
 	t.Run("Swapping will NOT prevent at-risk order from decaying out.", func(t *testing.T){
 		/*
@@ -50,29 +50,29 @@ func TestSwapWillPreserve(t *testing.T){
 				Order has a shelf life of twelve seocnds.
 				Courier will arrive in EIGHT seconds.
 				One second has elapsed, with a decay rate of 1
-				and a modifier of four. 
-				This means the current elapsed score is 
+				and a modifier of four.
+				This means the current elapsed score is
 					(12 - (1 second)*4*1)/12 => 0.67
 				but the final score would be:
 					(12 - (8 seconds)*1*4)/12 => -1.67 (failing)
 				The other available shelf has a modifier of 3.
 				If it is swapped to the shelf with a 3 modifier,
 				the final decay score would be:
-					(12 - (1 second)*4*1)/12 => 0.67 (elapsed) + 
+					(12 - (1 second)*4*1)/12 => 0.67 (elapsed) +
 					(12 - (7 seconds)*3*1)/12 => -0.75 (on new shelf)
 				for a total of roughly -0.08, which would still fail
 		*/
-		overflow_shelf := buildOrderShelf(1,"overflow",4)
-		hot_shelf := buildOrderShelf(1,"hot",3)
-		mock_now := mockTimeNow()
-		one_second_ago := mock_now.Add(time.Second*time.Duration(-1))
-		arrival_time := one_second_ago.Add(time.Second*time.Duration(8))
+		overflowShelf := buildOrderShelf(1,"overflow",4)
+		hotShelf := buildOrderShelf(1,"hot",3)
+		mockNow := mockTimeNow()
+		oneSecondAgo := mockNow.Add(time.Second*time.Duration(-1))
+		arrivalTime := oneSecondAgo.Add(time.Second*time.Duration(8))
 		order := foodOrder{Id:"a",Name:"dummy",Temp:"hot",ShelfLife:12,DecayRate:1,
-				IsCritical:true,placementTime:one_second_ago,
-				arrivalTime:arrival_time,shelf:overflow_shelf}
-		order.DecayScore = order.computeDecayScore(overflow_shelf.modifier,8*1000)
+				IsCritical:true,placementTime: oneSecondAgo,
+				arrivalTime: arrivalTime,shelf: overflowShelf}
+		order.DecayScore = order.computeDecayScore(overflowShelf.modifier,8*1000)
 		assertFloat32(t,order.DecayScore,float32(-5)/float32(3))
-		res := order.swapWillPreserve(hot_shelf.modifier,mockTimeNow)
+		res := order.swapWillPreserve(hotShelf.modifier,mockTimeNow)
 		assertBoolean(t,res,false)
 		assertFloat32(t,order.DecayScore,float32(-5)/float32(3))
 		assertBoolean(t,order.IsCritical,true)
@@ -90,7 +90,7 @@ func TestComputeDecayScore(t *testing.T){
 	order := foodOrder{Id:"a",Name:"dummy",Temp:"hot",
 			ShelfLife:200,DecayRate:0.25}
 
-	t.Run("Returns zero when order shelf life is zero", 
+	t.Run("Returns zero when order shelf life is zero",
 		func(t *testing.T){
 		order.ShelfLife = 0
 		res := order.computeDecayScore(1,1*1000)
@@ -99,7 +99,7 @@ func TestComputeDecayScore(t *testing.T){
 	})
 
 	msg := `
-Returns a negative result when the decay rate, 
+Returns a negative result when the decay rate,
 modifier, and arrival time outweigh shelf life.
 `
 	t.Run(msg,func(t *testing.T){
@@ -111,7 +111,7 @@ modifier, and arrival time outweigh shelf life.
 
 
 	msg = `
-Returns a positive result when shelf life 
+Returns a positive result when shelf life
 outweighs decay factors.
 `
 	t.Run(msg, func(t *testing.T){
@@ -155,7 +155,7 @@ func TestSelectShelf(t *testing.T){
 
 	msg := `
 Returns overflow if overflow space is available
-and item will survive storage in overflow. 
+and item will survive storage in overflow.
 Ensures that order's shelf is set to overflow,
 and that its decay score is set.
 `
@@ -165,11 +165,11 @@ and that its decay score is set.
 		overflow.modifier = 2
 		res := order.selectShelf(&shelves,2,mockTimeNow)
 		expected := overflow
-		expected_overflow_counter := int32(0)
-		expected_decay_score := order.computeDecayScore(overflow.modifier,2*1000)
+		expectedOverflowCounter := int32(0)
+		expectedDecayScore := order.computeDecayScore(overflow.modifier,2*1000)
 		assertShelf(t,res,expected)
-		assertInt32(t,res.counter,expected_overflow_counter)
-		assertFloat32(t,order.DecayScore,expected_decay_score)
+		assertInt32(t,res.counter, expectedOverflowCounter)
+		assertFloat32(t,order.DecayScore, expectedDecayScore)
 	})
 	msg = `
 Returns matching shelf if eligible for matching shelf
@@ -184,11 +184,11 @@ and that its decay score is set.
 		hot.modifier = 1
 		res := order.selectShelf(&shelves,2,mockTimeNow)
 		expected := hot
-		expected_hot_counter := int32(0)
-		expected_decay_score := order.computeDecayScore(hot.modifier,2*1000)
+		expectedHotCounter := int32(0)
+		expectedDecayScore := order.computeDecayScore(hot.modifier,2*1000)
 		assertShelf(t,res,expected)
-		assertInt32(t,res.counter,expected_hot_counter)
-		assertFloat32(t,order.DecayScore,expected_decay_score)
+		assertInt32(t,res.counter, expectedHotCounter)
+		assertFloat32(t,order.DecayScore, expectedDecayScore)
 	})
 
 	msg = `
@@ -205,11 +205,11 @@ and that its shelf is set to overflow.
 		hot.modifier = 0
 		res := order.selectShelf(&shelves,1000,mockTimeNow)
 		expected := overflow
-		expected_overflow_counter := int32(0)
-		expected_decay_score := order.computeDecayScore(overflow.modifier,1000*1000)
+		expectedOverflowCounter := int32(0)
+		expectedDecayScore := order.computeDecayScore(overflow.modifier,1000*1000)
 		assertShelf(t,res,expected)
-		assertInt32(t,res.counter,expected_overflow_counter)
-		assertFloat32(t,order.DecayScore,expected_decay_score)
+		assertInt32(t,res.counter, expectedOverflowCounter)
+		assertFloat32(t,order.DecayScore, expectedDecayScore)
 		assertBoolean(t,order.IsCritical,true)
 	})
 }

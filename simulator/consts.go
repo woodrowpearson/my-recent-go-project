@@ -1,11 +1,5 @@
 package simulator
 
-import "time"
-
-
-// moved to this file for mocking purposes
-var getTimeNow = time.Now
-
 const DispatchSuccessMsg = `
 Dispatched order %s to courier.
 Current shelf: %s.
