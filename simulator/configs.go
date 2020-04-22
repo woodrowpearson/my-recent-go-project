@@ -29,6 +29,8 @@ type SimulatorConfig struct {
 	cold_modifier uint
 	hot_modifier uint
 	frozen_modifier uint
+	receivedOutLog *log.Logger
+	swapLog *log.Logger
 	courier_out_log *log.Logger
 	courier_err_log *log.Logger
 	dispatch_out_log *log.Logger
@@ -55,7 +57,8 @@ func BuildConfig (overflow_size,hot_size,
 		cold_size,frozen_size,courier_lower_bound,
 		courier_upper_bound,orders_per_second,
 		overflow_modifier,cold_modifier,hot_modifier,
-		frozen_modifier uint,courier_out,courier_err,
+		frozen_modifier uint,receivedOut,swapOut,
+		courier_out,courier_err,
 		dispatch_out,dispatch_err io.Writer,
 		inputSource io.Reader,verbose bool)(*SimulatorConfig, error){
 	if (courier_lower_bound > courier_upper_bound){
@@ -74,6 +77,8 @@ func BuildConfig (overflow_size,hot_size,
 	We need to wrap the logs in a log.Logger object.
 	fmt.Fprintf, etc, are not thread-safe. Logger is.
 	*/
+	receivedOutLog := log.New(receivedOut,"",0)
+	swapOutLog := log.New(swapOut,"",0)
 	courier_out_log := log.New(courier_out,"",0)
 	courier_err_log := log.New(courier_err,"",0)
 	dispatch_out_log := log.New(dispatch_out,"",0)
@@ -91,6 +96,8 @@ func BuildConfig (overflow_size,hot_size,
 		cold_modifier: cold_modifier,
 		hot_modifier: hot_modifier,
 		frozen_modifier: frozen_modifier,
+		receivedOutLog:receivedOutLog,
+		swapLog:swapOutLog,
 		courier_out_log:courier_out_log,
 		courier_err_log:courier_err_log,
 		dispatch_out_log:dispatch_out_log,

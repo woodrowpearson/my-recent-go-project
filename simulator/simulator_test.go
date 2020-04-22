@@ -49,6 +49,7 @@ func TestRunPrimary(t *testing.T){
 ]`
 
 
+	receivedOut,swapOut := bytes.Buffer{},bytes.Buffer{}
 	courier_out,courier_err := bytes.Buffer{},bytes.Buffer{}
 	dispatch_err,dispatch_out := bytes.Buffer{},bytes.Buffer{}
 	inputSource := strings.NewReader(orders_as_string)
@@ -69,6 +70,8 @@ func TestRunPrimary(t *testing.T){
 		uint(cold_modifier),
 		uint(hot_modifier),
 		uint(frozen_modifier),
+		&receivedOut,
+		&swapOut,
 		&courier_out,
 		&courier_err,
 		&dispatch_out,
@@ -80,8 +83,21 @@ func TestRunPrimary(t *testing.T){
 	args.getRandRange = mockGetRandRange
 	statistics := new(Statistics)
 	statistics = Run(args,statistics)
+
+	expectedReceivedOut := `
+Received Order a8cfcb76-7f24-4420-a5ba-d46dd77bdffd. Name: Banana Split. Temp: frozen. Shelf Life: 20. Decay Rate: 0.63.
+
+Received Order 58e9b5fe-3fde-4a27-8e98-682e58a4a65d. Name: McFlury. Temp: frozen. Shelf Life: 375. Decay Rate: 0.40.
+
+Received Order 2ec069e3-576f-48eb-869f-74a540ef840c. Name: Acai Bowl. Temp: cold. Shelf Life: 249. Decay Rate: 0.30.
+
+Received Order 690b85f7-8c7d-4337-bd02-04e04454c826. Name: Yogurt. Temp: cold. Shelf Life: 263. Decay Rate: 0.37.
+`
+
+	// We cannot guarantee ordering of dispatch_out and courier_out.
 	assertStrings(t,courier_err.String(),"")
 	assertStrings(t,dispatch_err.String(),"")
+	assertStrings(t,receivedOut.String(),expectedReceivedOut)
 	assertUint64(t,statistics.GetTotalProcessed(),4)
 	assertUint64(t,statistics.GetTotalSuccesses(),4)
 	assertUint64(t,statistics.GetColdSuccesses(),2)
@@ -103,6 +119,7 @@ to the dispatch_out io.Writer.
 	t.Run(msg, func(t *testing.T){
 		statistics := Statistics{}
 		var wg sync.WaitGroup
+		receivedOut,swapOut := bytes.Buffer{},bytes.Buffer{}
 		courier_out,courier_err := bytes.Buffer{},bytes.Buffer{}
 		dispatch_err,dispatch_out := bytes.Buffer{},bytes.Buffer{}
 		inputSource := strings.NewReader("Dummy")
@@ -123,6 +140,8 @@ to the dispatch_out io.Writer.
 			uint(cold_modifier),
 			uint(hot_modifier),
 			uint(frozen_modifier),
+			&receivedOut,
+			&swapOut,
 			&courier_out,
 			&courier_err,
 			&dispatch_out,
@@ -155,6 +174,7 @@ message to the dispatch_err io.Writer.
 	t.Run(msg,func(t *testing.T){
 		statistics := Statistics{}
 		var wg sync.WaitGroup
+		receivedOut,swapOut := bytes.Buffer{},bytes.Buffer{}
 		courier_out,courier_err := bytes.Buffer{},bytes.Buffer{}
 		dispatch_err,dispatch_out := bytes.Buffer{},bytes.Buffer{}
 		inputSource := strings.NewReader("Dummy")
@@ -175,6 +195,8 @@ message to the dispatch_err io.Writer.
 			uint(cold_modifier),
 			uint(hot_modifier),
 			uint(frozen_modifier),
+			&receivedOut,
+			&swapOut,
 			&courier_out,
 			&courier_err,
 			&dispatch_out,
@@ -231,10 +253,11 @@ Wait group should be finished.
 		courier_err := bytes.Buffer{}
 		courier_out_log := log.New(&courier_out,"",0)
 		courier_err_log := log.New(&courier_err,"",0)
-		go courier(&order, overflow_shelf,overflow_shelf,
-			&statistics,&wg,
-			courier_out_log,
-			courier_err_log,mockTimeNow)
+		shelves := orderShelves{overflow:overflow_shelf}
+		args := SimulatorConfig{shelves:&shelves,getNow:mockTimeNow,
+				courier_out_log:courier_out_log,
+				courier_err_log:courier_err_log}
+		go courier(&order,overflow_shelf,&statistics,&wg,&args)
 		wg.Wait()
 		expected_out := `
 Courier fetched item a with remaining value of 1.00.
@@ -270,11 +293,11 @@ Wait group should be finished.
 		courier_err := bytes.Buffer{}
 		courier_out_log := log.New(&courier_out,"",0)
 		courier_err_log := log.New(&courier_err,"",0)
-		go courier(&order, overflow_shelf,overflow_shelf,
-			&statistics,&wg,
-			courier_out_log,
-			courier_err_log,
-			mockTimeNow)
+		shelves := orderShelves{overflow:overflow_shelf}
+		args := SimulatorConfig{shelves:&shelves,getNow:mockTimeNow,
+				courier_out_log:courier_out_log,
+				courier_err_log:courier_err_log}
+		go courier(&order,overflow_shelf,&statistics,&wg,&args)
 		wg.Wait()
 		expected_out := ""
 		expected_err := `

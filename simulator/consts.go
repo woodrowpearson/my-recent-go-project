@@ -23,6 +23,14 @@ Current shelf: %s.
 Current shelf contents: %v.
 `
 
+const OrderReceivedMsg = `
+Received Order %s. Name: %s. Temp: %s. Shelf Life: %d. Decay Rate: %.2f.
+`
+
+const ShelfSwapMsg = `
+Swapped Order %s from overflow shelf to %s shelf. Old Decay Score: %.2f. New Decay Score: %.2f.
+`
+
 const ShelfSizePrompt = "Specifies shelf capacity."
 
 const ShelfModifierPrompt = "Specifies shelf decay modifier"

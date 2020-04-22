@@ -38,6 +38,13 @@ func main(){
 	courierUpperBound := flag.Uint("courier_upper_bound",6,simulator.CourierPrompt)
 	ordersPerSecond := flag.Uint("orders_per_second",2,simulator.OrderRatePrompt)
 	flag.Parse()
+	receivedOut, err := os.Create("received.log")
+	check(err)
+	defer receivedOut.Close()
+	swapOut, err := os.Create("swapped.log")
+	check(err)
+	defer swapOut.Close()
+
 	courier_out, err := os.Create("courier_out.log")
 	check(err)
 	defer courier_out.Close()
@@ -65,6 +72,8 @@ func main(){
 		*cold_modifier,
 		*hot_modifier,
 		*frozen_modifier,
+		receivedOut,
+		swapOut,
 		courier_out,
 		courier_err,
 		dispatch_out,

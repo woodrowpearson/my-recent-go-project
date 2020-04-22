@@ -46,8 +46,6 @@ func(o *foodOrder) swapWillPreserve(modifier uint, getNow timeFunc) bool {
 		on_new_shelf = computeScore(new_modifier,arrival_time-current_time)
 		prospective_score = elapsed + on_new_shelf
 
-		TODO: Please make the types stop using all this coercion and casting.
-		it's ugly
 	*/
 	currentTimeMS := getNow().UnixNano()/int64(time.Millisecond)
 	initialTimeMS := o.placementTime.UnixNano()/int64(time.Millisecond)
@@ -65,11 +63,12 @@ func(o *foodOrder) swapWillPreserve(modifier uint, getNow timeFunc) bool {
 	return false
 }
 
+/*
+Selects a shelf to place an order on based on availability and decay rate.
+Aggressively fills overflow shelves if order is guaranteed to survive pickup
+while on overflow shelf.
+*/
 func (o *foodOrder) selectShelf(s *orderShelves,arrival_delay int,getNow timeFunc) *orderShelf {
-	/*
-	TODO: Add a narrative for this.
-
-	*/
 	matchingShelf := s.overflow
 	switch o.Temp{
 		case "cold":

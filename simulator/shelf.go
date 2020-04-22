@@ -132,7 +132,7 @@ func(s *orderShelf) duplicateContentsToSlice(order *foodOrder, with_order bool) 
 Determine if we can move an at-risk order from the overflow shelf
 in order to prevent it from decaying before pickup
 */
-func(s *orderShelf) swapAssessment(o *foodOrder, overflow *orderShelf,statistics *Statistics,getNow timeFunc){
+func(s *orderShelf) swapAssessment(o *foodOrder, statistics *Statistics,args *SimulatorConfig){
 	/*
 		In the event that we're freeing up space on
 		a non-overflow shelf, we'll want to scan the overflow shelf's
@@ -143,13 +143,16 @@ func(s *orderShelf) swapAssessment(o *foodOrder, overflow *orderShelf,statistics
 		remove it from criticals, assign it a new decay factor,
 		and run incrementAndUpdate on the overflow shelf.
 	*/
+	overflow := args.shelves.overflow
 	if s != overflow {
-		to_swap := s.selectCritical(overflow,getNow)
+		to_swap := s.selectCritical(overflow,args.getNow)
 		if to_swap != nil{
+			oldDecayScore := to_swap.DecayScore
 			overflow.incrementAndUpdate(to_swap,true)
 			s.contents.Remove(o.Id)
 			s.contents.Set(to_swap.Id,to_swap)
 			statistics.updateSwapped()
+			args.swapLog.Printf(ShelfSwapMsg,to_swap.Id,s.name,oldDecayScore,o.DecayScore)
 		} else {
 			/*
 				Any order not in overflow is categorically not critical.

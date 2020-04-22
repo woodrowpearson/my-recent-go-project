@@ -5,7 +5,7 @@ import (
 	"time"
 	"sync"
 	"math/rand"
-	"log"
+//	"log"
 )
 
 func check(e error){
@@ -20,25 +20,22 @@ Attempts to trigger shelf-swapping from overflow.
 Logs whether the order is successfully picked up or decayed out.
 */
 func courier(order *foodOrder, shelf *orderShelf,
-		overflow *orderShelf,
 		statistics *Statistics,
 		wg *sync.WaitGroup,
-		courier_out_log *log.Logger,
-		courier_err_log *log.Logger,
-		getNow timeFunc){
+		args *SimulatorConfig){
 	time.Sleep(time.Until(order.arrivalTime))
 
 	contents := shelf.duplicateContentsToSlice(order,false)
 	if (order.IsCritical){
 		// Decayed
 		statistics.update(order,false,true)
-		courier_err_log.Printf(PickupErrMsg,order.Id,order.DecayScore,shelf.name,contents)
+		args.courier_err_log.Printf(PickupErrMsg,order.Id,order.DecayScore,shelf.name,contents)
 	} else {
 		// Success
 		statistics.update(order,true,false)
-		courier_out_log.Printf(PickupSuccessMsg,order.Id,order.DecayScore,shelf.name,contents)
+		args.courier_out_log.Printf(PickupSuccessMsg,order.Id,order.DecayScore,shelf.name,contents)
 	}
-	shelf.swapAssessment(order,overflow,statistics,getNow)
+	shelf.swapAssessment(order,statistics,args)
 	wg.Done()
 }
 
@@ -61,11 +58,9 @@ func dispatch(o *foodOrder,  args *SimulatorConfig,
 		wg.Add(1)
 		contents := shelf.duplicateContentsToSlice(o,true)
 		args.dispatch_out_log.Printf(DispatchSuccessMsg,o.Id,shelf.name,contents)
-		go courier(o,shelf,args.shelves.overflow,
+		go courier(o,shelf,
 			statistics,wg,
-			args.courier_out_log,
-			args.courier_err_log,
-			args.getNow)
+			args)
 	} else {
 		// Discarded due to space.
 		statistics.update(o,false,false)
@@ -91,6 +86,7 @@ func Run(args *SimulatorConfig,statistics *Statistics) *Statistics {
 				if args.verbose {
 					args.verbose_log.Printf("%+v\n",&v)
 				}
+				args.receivedOutLog.Printf(OrderReceivedMsg,v.Id,v.Name,v.Temp,v.ShelfLife,v.DecayRate)
 				dispatch(&v,args,statistics,&wg)
 			} else {
 				break ioLoop

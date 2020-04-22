@@ -3,6 +3,8 @@ package simulator
 import (
 	"testing"
 	"time"
+	"bytes"
+	"log"
 )
 
 
@@ -46,8 +48,13 @@ it has been picked up).
 				IsCritical:false,placementTime:one_second_ago,
 				arrivalTime:arrival_time,shelf:hot_shelf,DecayScore:1}
 		hot_shelf.contents.Set(safe_order.Id,&safe_order)
+		shelves := orderShelves{overflow:overflow_shelf,hot:hot_shelf}
+		swapOut := bytes.Buffer{}
+		swapOutLog := log.New(&swapOut,"",0)
+		args := SimulatorConfig{shelves:&shelves,getNow:mockTimeNow,swapLog:swapOutLog}
 
-		hot_shelf.swapAssessment(&safe_order,overflow_shelf,&statistics,mockTimeNow)
+		//hot_shelf.swapAssessment(&safe_order,overflow_shelf,&statistics,mockTimeNow)
+		hot_shelf.swapAssessment(&safe_order,&statistics,&args)
 		hot_shelf_contents := hot_shelf.duplicateContentsToMap(&safe_order,true)
 		hot_shelf_order := castToOrder(hot_shelf_contents["a"])
 		assertOrder(t,hot_shelf_order,&critical_order)
@@ -56,6 +63,11 @@ it has been picked up).
 		assertBoolean(t,overflow_shelf.contents.IsEmpty(),true)
 		assertBoolean(t,overflow_shelf.criticals.IsEmpty(),true)
 		assertUint64(t,statistics.GetTotalSwapped(),1)
+
+		expectedSwapOut := `
+Swapped Order a from overflow shelf to hot shelf. Old Decay Score: 1.17. New Decay Score: 1.00.
+`
+		assertStrings(t,swapOut.String(),expectedSwapOut)
 	})
 
 
@@ -76,11 +88,18 @@ and available count increased by one.
 				IsCritical:false,placementTime:one_second_ago,
 				arrivalTime:arrival_time,shelf:hot_shelf,DecayScore:1}
 		hot_shelf.contents.Set(safe_order.Id,&safe_order)
-		hot_shelf.swapAssessment(&safe_order,overflow_shelf,&statistics,mockTimeNow)
+
+		shelves := orderShelves{overflow:overflow_shelf,hot:hot_shelf}
+		swapOut := bytes.Buffer{}
+		swapOutLog := log.New(&swapOut,"",0)
+		args := SimulatorConfig{shelves:&shelves,getNow:mockTimeNow,swapLog:swapOutLog}
+
+		hot_shelf.swapAssessment(&safe_order,&statistics,&args)
 		assertInt32(t,hot_shelf.counter,int32(2))
 		assertInt32(t,overflow_shelf.counter,int32(1))
 		assertBoolean(t,hot_shelf.contents.IsEmpty(),true)
 		assertUint64(t,statistics.GetTotalSwapped(),0)
+		assertStrings(t,swapOut.String(),"")
 	})
 
 	msg = `
@@ -100,12 +119,19 @@ and available count increased by one.
 				IsCritical:false,placementTime:one_second_ago,
 				arrivalTime:arrival_time,shelf:overflow_shelf,DecayScore:1}
 		overflow_shelf.contents.Set(safe_order.Id,&safe_order)
-		overflow_shelf.swapAssessment(&safe_order,overflow_shelf,&statistics,mockTimeNow)
+
+		shelves := orderShelves{overflow:overflow_shelf,hot:hot_shelf}
+		swapOut := bytes.Buffer{}
+		swapOutLog := log.New(&swapOut,"",0)
+		args := SimulatorConfig{shelves:&shelves,getNow:mockTimeNow,swapLog:swapOutLog}
+
+		overflow_shelf.swapAssessment(&safe_order,&statistics,&args)
 		assertInt32(t,hot_shelf.counter,int32(1))
 		assertInt32(t,overflow_shelf.counter,int32(2))
 		assertBoolean(t,hot_shelf.contents.IsEmpty(),true)
 		assertBoolean(t,overflow_shelf.contents.IsEmpty(),true)
 		assertUint64(t,statistics.GetTotalSwapped(),0)
+		assertStrings(t,swapOut.String(),"")
 	})
 
 }
