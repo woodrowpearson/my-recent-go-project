@@ -1,8 +1,8 @@
 package simulator
 
 import (
-	"testing"
 	"math"
+	"testing"
 	"time"
 )
 
@@ -13,7 +13,7 @@ func mockTimeNow() time.Time{
 	return time.Date(2020,1,0,0,0,0,0,location)
 }
 
-func mockGetRandRange(lower_bound int, upper_bound int) int {
+func mockGetRandRange(lowerBound int, upperBound int) int {
 	return 0
 }
 
@@ -53,8 +53,8 @@ func assertInt32(t *testing.T, res int32, expected int32){
 }
 func assertFloat32(t *testing.T, res float32, expected float32){
 	t.Helper()
-	almost_equal := math.Abs(float64(res)-float64(expected)) <= 1e-9
-	if !almost_equal{
+	almostEqual := math.Abs(float64(res)-float64(expected)) <= 1e-9
+	if !almostEqual{
 		t.Errorf("received %.3f, expected %.3f",res,expected)
 	}
 }

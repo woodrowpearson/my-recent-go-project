@@ -3,3 +3,4 @@ hello
 *.log
 *.swp
 .idea/*
+.vscode/*
