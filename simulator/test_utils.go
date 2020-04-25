@@ -13,6 +13,7 @@ func mockTimeNow() time.Time{
 	return time.Date(2020,1,0,0,0,0,0,location)
 }
 
+//noinspection ALL
 func mockGetRandRange(lowerBound int, upperBound int) int {
 	return 0
 }
