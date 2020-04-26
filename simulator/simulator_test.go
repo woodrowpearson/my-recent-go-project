@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestRunPrimary(t *testing.T){
+func TestRunPrimary(t *testing.T) {
 	/*
 		Single integration test case for proving statistics.
 		All orders will be flushed simultaneously.
@@ -48,16 +48,15 @@ func TestRunPrimary(t *testing.T){
   }
 ]`
 
-
-	receivedOut,swapOut := bytes.Buffer{},bytes.Buffer{}
-	courierOut, courierErr := bytes.Buffer{},bytes.Buffer{}
-	dispatchErr, dispatchOut := bytes.Buffer{},bytes.Buffer{}
+	receivedOut, swapOut := bytes.Buffer{}, bytes.Buffer{}
+	courierOut, courierErr := bytes.Buffer{}, bytes.Buffer{}
+	dispatchErr, dispatchOut := bytes.Buffer{}, bytes.Buffer{}
 	inputSource := strings.NewReader(ordersAsString)
-	overflowSize,hotSize,coldSize,frozenSize := 15,10,10,10
+	overflowSize, hotSize, coldSize, frozenSize := 15, 10, 10, 10
 	// make courier arrive instantaneously
-	courierLowerBound,courierUpperBound := 0,0
+	courierLowerBound, courierUpperBound := 0, 0
 	ordersPerSecond := 0
-	overflowModifier, coldModifier, hotModifier, frozenModifier := 1,1,1,1
+	overflowModifier, coldModifier, hotModifier, frozenModifier := 1, 1, 1, 1
 	args, err := BuildConfig(
 		uint(overflowSize),
 		uint(hotSize),
@@ -82,7 +81,7 @@ func TestRunPrimary(t *testing.T){
 	check(err)
 	args.getRandRange = mockGetRandRange
 	statistics := new(Statistics)
-	statistics = Run(args,statistics)
+	statistics = Run(args, statistics)
 
 	expectedReceivedOut := `
 Received Order a8cfcb76-7f24-4420-a5ba-d46dd77bdffd. Name: Banana Split. Temp: frozen. Shelf Life: 20. Decay Rate: 0.63.
@@ -95,17 +94,16 @@ Received Order 690b85f7-8c7d-4337-bd02-04e04454c826. Name: Yogurt. Temp: cold. S
 `
 
 	// We cannot guarantee ordering of dispatch_out and courier_out.
-	assertStrings(t, courierErr.String(),"")
-	assertStrings(t, dispatchErr.String(),"")
-	assertStrings(t,receivedOut.String(),expectedReceivedOut)
-	assertUint64(t,statistics.GetTotalProcessed(),4)
-	assertUint64(t,statistics.GetTotalSuccesses(),4)
-	assertUint64(t,statistics.GetColdSuccesses(),2)
-	assertUint64(t,statistics.GetFrozenSuccesses(),2)
+	assertStrings(t, courierErr.String(), "")
+	assertStrings(t, dispatchErr.String(), "")
+	assertStrings(t, receivedOut.String(), expectedReceivedOut)
+	assertUint64(t, statistics.GetTotalProcessed(), 4)
+	assertUint64(t, statistics.GetTotalSuccesses(), 4)
+	assertUint64(t, statistics.GetColdSuccesses(), 2)
+	assertUint64(t, statistics.GetFrozenSuccesses(), 2)
 }
 
-
-func TestDispatch(t *testing.T){
+func TestDispatch(t *testing.T) {
 	/*
 		Only tests logging. State change tests
 		are handled in the shelf and order test suites.
@@ -116,18 +114,18 @@ Order arrives with an available shelf.
 dispatch() logs the contents of the shelf
 to the dispatch_out io.Writer.
 `
-	t.Run(msg, func(t *testing.T){
+	t.Run(msg, func(t *testing.T) {
 		statistics := Statistics{}
 		var wg sync.WaitGroup
-		receivedOut,swapOut := bytes.Buffer{},bytes.Buffer{}
-		courierOut, courierErr := bytes.Buffer{},bytes.Buffer{}
-		dispatchErr, dispatchOut := bytes.Buffer{},bytes.Buffer{}
+		receivedOut, swapOut := bytes.Buffer{}, bytes.Buffer{}
+		courierOut, courierErr := bytes.Buffer{}, bytes.Buffer{}
+		dispatchErr, dispatchOut := bytes.Buffer{}, bytes.Buffer{}
 		inputSource := strings.NewReader("Dummy")
-		overflowSize,hotSize,coldSize,frozenSize := 1,1,1,1
+		overflowSize, hotSize, coldSize, frozenSize := 1, 1, 1, 1
 		// make courier arrive instantaneously
-		courierLowerBound,courierUpperBound := 0,0
+		courierLowerBound, courierUpperBound := 0, 0
 		ordersPerSecond := 1
-		overflowModifier, coldModifier, hotModifier, frozenModifier := 1,1,1,1
+		overflowModifier, coldModifier, hotModifier, frozenModifier := 1, 1, 1, 1
 		args, err := BuildConfig(
 			uint(overflowSize),
 			uint(hotSize),
@@ -151,8 +149,8 @@ to the dispatch_out io.Writer.
 		)
 		check(err)
 		args.getRandRange = mockGetRandRange
-		order := foodOrder{Id:"a",Name:"dummy",Temp:"hot",ShelfLife:200,DecayRate:1}
-		dispatch(&order, args,&statistics,&wg)
+		order := foodOrder{Id: "a", Name: "dummy", Temp: "hot", ShelfLife: 200, DecayRate: 1}
+		dispatch(&order, args, &statistics, &wg)
 		wg.Wait()
 		outRes := dispatchOut.String()
 		errRes := dispatchErr.String()
@@ -161,7 +159,7 @@ Dispatched order a to courier.
 Current shelf: overflow.
 Current shelf contents: [a].
 `
-		assertStrings(t, errRes,"")
+		assertStrings(t, errRes, "")
 		assertStrings(t, outRes, expectedOut)
 
 	})
@@ -171,18 +169,18 @@ Order arrives, but all shelves have 0
 capacity. dispatch() logs the discard
 message to the dispatch_err io.Writer.
 `
-	t.Run(msg,func(t *testing.T){
+	t.Run(msg, func(t *testing.T) {
 		statistics := Statistics{}
 		var wg sync.WaitGroup
-		receivedOut,swapOut := bytes.Buffer{},bytes.Buffer{}
-		courierOut, courierErr := bytes.Buffer{},bytes.Buffer{}
-		dispatchErr, dispatchOut := bytes.Buffer{},bytes.Buffer{}
+		receivedOut, swapOut := bytes.Buffer{}, bytes.Buffer{}
+		courierOut, courierErr := bytes.Buffer{}, bytes.Buffer{}
+		dispatchErr, dispatchOut := bytes.Buffer{}, bytes.Buffer{}
 		inputSource := strings.NewReader("Dummy")
-		overflowSize,hotSize,coldSize,frozenSize := 0,0,0,0
+		overflowSize, hotSize, coldSize, frozenSize := 0, 0, 0, 0
 		// make courier arrive instantaneously
-		courierLowerBound,courierUpperBound := 0,0
+		courierLowerBound, courierUpperBound := 0, 0
 		ordersPerSecond := 1
-		overflowModifier, coldModifier, hotModifier, frozenModifier := 0,0,0,0
+		overflowModifier, coldModifier, hotModifier, frozenModifier := 0, 0, 0, 0
 		args, err := BuildConfig(
 			uint(overflowSize),
 			uint(hotSize),
@@ -206,26 +204,25 @@ message to the dispatch_err io.Writer.
 		)
 		check(err)
 		args.getRandRange = mockGetRandRange
-		order := foodOrder{Id:"a",Name:"dummy",Temp:"hot",ShelfLife:200,DecayRate:1}
-		dispatch(&order, args,&statistics,&wg)
+		order := foodOrder{Id: "a", Name: "dummy", Temp: "hot", ShelfLife: 200, DecayRate: 1}
+		dispatch(&order, args, &statistics, &wg)
 		wg.Wait()
 		outRes := dispatchOut.String()
 		errRes := dispatchErr.String()
 		expectedErr := `Order a discarded due to lack of capacity.
 `
-		assertStrings(t, outRes,"")
+		assertStrings(t, outRes, "")
 		assertStrings(t, errRes, expectedErr)
-		assertUint64(t,statistics.GetTotalFailures(),1)
-		assertUint64(t,statistics.GetTotalDiscarded(),1)
-		assertUint64(t,statistics.GetTotalProcessed(),1)
-		assertUint64(t,statistics.GetHotDiscarded(),1)
+		assertUint64(t, statistics.GetTotalFailures(), 1)
+		assertUint64(t, statistics.GetTotalDiscarded(), 1)
+		assertUint64(t, statistics.GetTotalProcessed(), 1)
+		assertUint64(t, statistics.GetHotDiscarded(), 1)
 
 	})
 
 }
 
-
-func TestCourier(t *testing.T){
+func TestCourier(t *testing.T) {
 
 	/*
 		Two cases:
@@ -240,24 +237,24 @@ and it is a non-critical order.
 Write the success to the success pipeline.
 Wait group should be finished.
 `
-	t.Run(msg, func(t *testing.T){
+	t.Run(msg, func(t *testing.T) {
 		statistics := Statistics{}
 		var wg sync.WaitGroup
 		wg.Add(1)
-		overflowShelf := buildOrderShelf(1,"overflow",0)
-		order := foodOrder{Id:"a",Name:"dummy",Temp:"hot",ShelfLife:12,DecayRate:1,
-				IsCritical:false,placementTime:mockTimeNow(),
-				arrivalTime:mockTimeNow(),shelf: overflowShelf,DecayScore:1.00}
-		overflowShelf.contents.Set(order.Id,&order)
+		overflowShelf := buildOrderShelf(1, "overflow", 0)
+		order := foodOrder{Id: "a", Name: "dummy", Temp: "hot", ShelfLife: 12, DecayRate: 1,
+			IsCritical: false, placementTime: mockTimeNow(),
+			arrivalTime: mockTimeNow(), shelf: overflowShelf, DecayScore: 1.00}
+		overflowShelf.contents.Set(order.Id, &order)
 		courierOut := bytes.Buffer{}
 		courierErr := bytes.Buffer{}
-		courierOutLog := log.New(&courierOut,"",0)
-		courierErrLog := log.New(&courierErr,"",0)
+		courierOutLog := log.New(&courierOut, "", 0)
+		courierErrLog := log.New(&courierErr, "", 0)
 		shelves := orderShelves{overflow: overflowShelf}
-		args := Config{shelves: &shelves,getNow:mockTimeNow,
-				courierOutLog: courierOutLog,
-				courierErrLog: courierErrLog}
-		go courier(&order, overflowShelf,&statistics,&wg,&args)
+		args := Config{shelves: &shelves, getNow: mockTimeNow,
+			courierOutLog: courierOutLog,
+			courierErrLog: courierErrLog}
+		go courier(&order, overflowShelf, &statistics, &wg, &args)
 		wg.Wait()
 		expectedOut := `
 Courier fetched item a with remaining value of 1.00.
@@ -269,9 +266,9 @@ Current shelf contents: [].
 		errRes := courierErr.String()
 		assertStrings(t, outRes, expectedOut)
 		assertStrings(t, errRes, expectedErr)
-		assertUint64(t,statistics.GetTotalProcessed(),1)
-		assertUint64(t,statistics.GetTotalSuccesses(),1)
-		assertUint64(t,statistics.GetHotSuccesses(),1)
+		assertUint64(t, statistics.GetTotalProcessed(), 1)
+		assertUint64(t, statistics.GetTotalSuccesses(), 1)
+		assertUint64(t, statistics.GetHotSuccesses(), 1)
 	})
 
 	msg = `
@@ -280,24 +277,24 @@ and its a critical order.
 Write the failure to the error pipeline.
 Wait group should be finished.
 `
-	t.Run(msg, func(t *testing.T){
+	t.Run(msg, func(t *testing.T) {
 		statistics := Statistics{}
 		var wg sync.WaitGroup
 		wg.Add(1)
-		overflowShelf := buildOrderShelf(1,"overflow",0)
-		order := foodOrder{Id:"a",Name:"dummy",Temp:"hot",ShelfLife:12,DecayRate:1,
-				IsCritical:true,placementTime:mockTimeNow(),
-				arrivalTime:mockTimeNow(),shelf: overflowShelf,DecayScore:0.00}
-		overflowShelf.contents.Set(order.Id,&order)
+		overflowShelf := buildOrderShelf(1, "overflow", 0)
+		order := foodOrder{Id: "a", Name: "dummy", Temp: "hot", ShelfLife: 12, DecayRate: 1,
+			IsCritical: true, placementTime: mockTimeNow(),
+			arrivalTime: mockTimeNow(), shelf: overflowShelf, DecayScore: 0.00}
+		overflowShelf.contents.Set(order.Id, &order)
 		courierOut := bytes.Buffer{}
 		courierErr := bytes.Buffer{}
-		courierOutLog := log.New(&courierOut,"",0)
-		courierErrLog := log.New(&courierErr,"",0)
+		courierOutLog := log.New(&courierOut, "", 0)
+		courierErrLog := log.New(&courierErr, "", 0)
 		shelves := orderShelves{overflow: overflowShelf}
-		args := Config{shelves: &shelves,getNow:mockTimeNow,
-				courierOutLog: courierOutLog,
-				courierErrLog: courierErrLog}
-		go courier(&order, overflowShelf,&statistics,&wg,&args)
+		args := Config{shelves: &shelves, getNow: mockTimeNow,
+			courierOutLog: courierOutLog,
+			courierErrLog: courierErrLog}
+		go courier(&order, overflowShelf, &statistics, &wg, &args)
 		wg.Wait()
 		expectedOut := ""
 		expectedErr := `
@@ -309,11 +306,10 @@ Current shelf contents: [].
 		errRes := courierErr.String()
 		assertStrings(t, outRes, expectedOut)
 		assertStrings(t, errRes, expectedErr)
-		assertUint64(t,statistics.GetTotalProcessed(),1)
-		assertUint64(t,statistics.GetTotalFailures(),1)
-		assertUint64(t,statistics.GetTotalDecayed(),1)
-		assertUint64(t,statistics.GetHotDecayed(),1)
+		assertUint64(t, statistics.GetTotalProcessed(), 1)
+		assertUint64(t, statistics.GetTotalFailures(), 1)
+		assertUint64(t, statistics.GetTotalDecayed(), 1)
+		assertUint64(t, statistics.GetHotDecayed(), 1)
 	})
-
 
 }

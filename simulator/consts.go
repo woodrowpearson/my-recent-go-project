@@ -2,7 +2,6 @@ package simulator
 
 import "time"
 
-
 // moved to this file for mocking purposes
 //noinspection ALL
 var getTimeNow = time.Now

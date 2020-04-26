@@ -33,12 +33,12 @@ type Config struct {
 	swapLog           *log.Logger
 	courierOutLog     *log.Logger
 	courierErrLog     *log.Logger
-	dispatchOutLog      *log.Logger
-	dispatchErrLog      *log.Logger
-	verboseLog          *log.Logger
-	inputSource         io.Reader
-	shelves             *orderShelves
-	verbose             bool
+	dispatchOutLog    *log.Logger
+	dispatchErrLog    *log.Logger
+	verboseLog        *log.Logger
+	inputSource       io.Reader
+	shelves           *orderShelves
+	verbose           bool
 	// necessary for mocks.
 	getNow timeFunc
 	// necessary for mocks.
@@ -46,44 +46,44 @@ type Config struct {
 }
 
 func getRandRange(lowerBound int, upperBound int) int {
-	return rand.Intn(upperBound-lowerBound)+ lowerBound
+	return rand.Intn(upperBound-lowerBound) + lowerBound
 }
 
 /*
 Allows config to be built from code by other projects,
 as opposed to just CLI args.
 */
-func BuildConfig (overflowSize, hotSize,
+func BuildConfig(overflowSize, hotSize,
 	coldSize, frozenSize, courierLowerBound,
 	courierUpperBound, ordersPerSecond,
 	overflowModifier, coldModifier, hotModifier,
-	frozenModifier uint,receivedOut,swapOut,
+	frozenModifier uint, receivedOut, swapOut,
 	courierOut, courierErr,
 	dispatchOut, dispatchErr io.Writer,
-		inputSource io.Reader,verbose bool)(*Config, error){
+	inputSource io.Reader, verbose bool) (*Config, error) {
 	if courierLowerBound > courierUpperBound {
 
-		return nil,errors.New(CourierPrompt)
+		return nil, errors.New(CourierPrompt)
 	}
-	overflow := buildOrderShelf(overflowSize,"overflow",
+	overflow := buildOrderShelf(overflowSize, "overflow",
 		overflowModifier)
 	cold := buildOrderShelf(coldSize, "cold", coldModifier)
-	hot := buildOrderShelf(hotSize,"hot", hotModifier)
-	frozen := buildOrderShelf(frozenSize,"frozen", frozenModifier)
-	dead := buildOrderShelf(1,"dead",0)
-	shelves := orderShelves{overflow:overflow,cold:cold,frozen:frozen,
-			hot:hot,dead:dead}
+	hot := buildOrderShelf(hotSize, "hot", hotModifier)
+	frozen := buildOrderShelf(frozenSize, "frozen", frozenModifier)
+	dead := buildOrderShelf(1, "dead", 0)
+	shelves := orderShelves{overflow: overflow, cold: cold, frozen: frozen,
+		hot: hot, dead: dead}
 	/*
-	We need to wrap the logs in a log.Logger object.
-	fmt.Fprintf, etc, are not thread-safe. Logger is.
+		We need to wrap the logs in a log.Logger object.
+		fmt.Fprintf, etc, are not thread-safe. Logger is.
 	*/
-	receivedOutLog := log.New(receivedOut,"",0)
-	swapOutLog := log.New(swapOut,"",0)
-	courierOutLog := log.New(courierOut,"",0)
-	courierErrLog := log.New(courierErr,"",0)
-	dispatchOutLog := log.New(dispatchOut,"",0)
-	dispatchErrLog := log.New(dispatchErr,"",0)
-	verboseLog := log.New(os.Stdout,"Ingested order:",log.Ltime)
+	receivedOutLog := log.New(receivedOut, "", 0)
+	swapOutLog := log.New(swapOut, "", 0)
+	courierOutLog := log.New(courierOut, "", 0)
+	courierErrLog := log.New(courierErr, "", 0)
+	dispatchOutLog := log.New(dispatchOut, "", 0)
+	dispatchErrLog := log.New(dispatchErr, "", 0)
+	verboseLog := log.New(os.Stdout, "Ingested order:", log.Ltime)
 	config := Config{
 		overflowSize:      overflowSize,
 		hotSize:           hotSize,
@@ -100,14 +100,14 @@ func BuildConfig (overflowSize, hotSize,
 		swapLog:           swapOutLog,
 		courierOutLog:     courierOutLog,
 		courierErrLog:     courierErrLog,
-		dispatchOutLog:      dispatchOutLog,
-		dispatchErrLog:      dispatchErrLog,
-		verboseLog:          verboseLog,
-		inputSource:         inputSource,
-		shelves:             &shelves,
-		verbose:             verbose,
-		getNow:              time.Now,
-		getRandRange:        getRandRange,
+		dispatchOutLog:    dispatchOutLog,
+		dispatchErrLog:    dispatchErrLog,
+		verboseLog:        verboseLog,
+		inputSource:       inputSource,
+		shelves:           &shelves,
+		verbose:           verbose,
+		getNow:            time.Now,
+		getRandRange:      getRandRange,
 	}
-	return &config,nil
+	return &config, nil
 }

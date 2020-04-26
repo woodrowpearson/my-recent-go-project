@@ -1,10 +1,11 @@
 package main
 
 import (
-	"./simulator"
 	"flag"
 	"fmt"
 	"os"
+
+	"./simulator"
 )
 
 func check(e error) {

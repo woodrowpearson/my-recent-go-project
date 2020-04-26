@@ -6,29 +6,29 @@ import (
 )
 
 type foodOrder struct {
-	Id string
-	Name string
-	Temp string
-	ShelfLife uint32
-	DecayRate float32
-	DecayScore float32
-	IsCritical bool
-	shelf *orderShelf
+	Id            string
+	Name          string
+	Temp          string
+	ShelfLife     uint32
+	DecayRate     float32
+	DecayScore    float32
+	IsCritical    bool
+	shelf         *orderShelf
 	placementTime time.Time
-	arrivalTime time.Time
+	arrivalTime   time.Time
 }
 
-func(o *foodOrder) computeDecayScore(modifier uint, arrivalTimeMs int64) float32{
+func (o *foodOrder) computeDecayScore(modifier uint, arrivalTimeMs int64) float32 {
 	// TODO: please fix up the type coercions, they're nasty
 	a := float32(o.ShelfLife)
-	b := o.DecayRate*(float32(arrivalTimeMs)/1000)*float32(modifier)
-	if a == b  || a == 0{
+	b := o.DecayRate * (float32(arrivalTimeMs) / 1000) * float32(modifier)
+	if a == b || a == 0 {
 		return 0
 	}
-	return (a-b)/a
+	return (a - b) / a
 }
 
-func(o *foodOrder) swapWillPreserve(modifier uint, getNow timeFunc) bool {
+func (o *foodOrder) swapWillPreserve(modifier uint, getNow timeFunc) bool {
 	/*
 		Needs to compute prospective decay score
 		based on current elapsed score + remaining elapsed score
@@ -47,15 +47,15 @@ func(o *foodOrder) swapWillPreserve(modifier uint, getNow timeFunc) bool {
 		prospective_score = elapsed + on_new_shelf
 
 	*/
-	currentTimeMS := getNow().UnixNano()/int64(time.Millisecond)
-	initialTimeMS := o.placementTime.UnixNano()/int64(time.Millisecond)
-	arrivalTimeMS := o.arrivalTime.UnixNano()/int64(time.Millisecond)
+	currentTimeMS := getNow().UnixNano() / int64(time.Millisecond)
+	initialTimeMS := o.placementTime.UnixNano() / int64(time.Millisecond)
+	arrivalTimeMS := o.arrivalTime.UnixNano() / int64(time.Millisecond)
 	elapsedMS := currentTimeMS - initialTimeMS
 	prospectiveMS := arrivalTimeMS - currentTimeMS
-	elapsedScore := o.computeDecayScore(o.shelf.modifier,elapsedMS)
-	newShelfScore := o.computeDecayScore(modifier,prospectiveMS)
+	elapsedScore := o.computeDecayScore(o.shelf.modifier, elapsedMS)
+	newShelfScore := o.computeDecayScore(modifier, prospectiveMS)
 	prospectiveScore := newShelfScore + elapsedScore
-	if prospectiveScore > 0{
+	if prospectiveScore > 0 {
 		o.IsCritical = false
 		o.DecayScore = prospectiveScore
 		return true
@@ -68,23 +68,23 @@ Selects a shelf to place an order on based on availability and decay rate.
 Aggressively fills overflow shelves if order is guaranteed to survive pickup
 while on overflow shelf.
 */
-func (o *foodOrder) selectShelf(s *orderShelves, arrivalDelay int,getNow timeFunc) *orderShelf {
+func (o *foodOrder) selectShelf(s *orderShelves, arrivalDelay int, getNow timeFunc) *orderShelf {
 	matchingShelf := s.overflow
-	switch o.Temp{
-		case "cold":
-			matchingShelf = s.cold
-		case "hot":
-			matchingShelf = s.hot
-		case "frozen":
-			matchingShelf = s.frozen
+	switch o.Temp {
+	case "cold":
+		matchingShelf = s.cold
+	case "hot":
+		matchingShelf = s.hot
+	case "frozen":
+		matchingShelf = s.frozen
 	}
 
 	overflowDecayScore := o.computeDecayScore(s.overflow.modifier,
-					int64(arrivalDelay*1000))
+		int64(arrivalDelay*1000))
 	matchingDecayScore := o.computeDecayScore(matchingShelf.modifier,
-				int64(arrivalDelay*1000))
+		int64(arrivalDelay*1000))
 	o.placementTime = getNow()
-	o.arrivalTime = o.placementTime.Add(time.Second*time.Duration(arrivalDelay))
+	o.arrivalTime = o.placementTime.Add(time.Second * time.Duration(arrivalDelay))
 	/*
 		We only need to load the counters once in this function.
 		All reductions in the shelf counters happen on a single thread
@@ -118,8 +118,8 @@ func (o *foodOrder) selectShelf(s *orderShelves, arrivalDelay int,getNow timeFun
 		return matchingShelf
 	}
 	/*
-	 The only case not accounted for here
-	is when we've got a <= 0 and it'll only go into overflow.
+		 The only case not accounted for here
+		is when we've got a <= 0 and it'll only go into overflow.
 	*/
 	o.IsCritical = true
 	o.DecayScore = overflowDecayScore
