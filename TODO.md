@@ -7,7 +7,7 @@
 4. add in logging output to conform with test rubric
 5. add unit tests
 
-## Thurs 4/16 
+## Thurs 4/16
 
 1. reread shelf scoring logic and implement - DONE
 2. sniff out bug in the shelf assignation logic - DONE
@@ -84,13 +84,12 @@ modifications to make:
 5. unit tests for all remaining cases incl concurrency
 6. move to a package
 7. have main.go import from the package as a CLI client.
-8. narrative for woody.
 
 1. dispatching heuristic update - DONE
 2. move computeDecayRate to a method on order - DONE
 3. add decayCriticality and decayScore to the computeDecayRate - DONE
 4. extend Snapshot to compute the new score on swap.
-4. WRITE TESTS
+4. WRITE TESTS - DONE
 
 ## Monday 4/20
 
@@ -127,29 +126,7 @@ Following tests needed:
 
 1. tests for dispatch function - DONE
 2. test for runqueue function - DONE
-3. fix race conditions in RE logging.
-4. add that -v flag back in.
-4. narrative of behaviors
-
-### Notes
-
-1. current implementation with celery/redis WILL NOT SCALE. the logging rubric requires listing
-of all contents of shelves whenever an event occurs. With redis, this implies an additional redis
-access via a pipeline. We're already at 2 separate redis accesses per event, this would put it to 3,
-and each event introduces socket+parsing overhead, not to mention the btree lookup (however minimal it is
-due to small dataset size) on the redis keys themselves.
-2. i've avoided unit tests on this initial run as a matter of sketching things out.
-3. we need to add in discard logic.
-
-## to run (for rough draft)
-
-first window:
-celery worker -A worker.celery_app --loglevel=info
-second window:
-python order_queue.py
-
-## To Run
-
-go build main.go
-./main.go 
+3. fix race conditions in RE logging. - DONE
+4. add that -v flag back in. - DONE
+4. narrative of behaviors - DONE
 

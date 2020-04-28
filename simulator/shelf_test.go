@@ -7,15 +7,15 @@ import (
 	"time"
 )
 
+/*
+	Three cases:
+		1. We have a critical, eligible value to swap
+		2. We have no eligible values to swap due to lack of criticals
+		3. swapAssessment's caller shelf is an overflow shelf,
+			so there's no freed up space.
+	Blocked by: SelectCritical test
+*/
 func TestSwapAssessment(t *testing.T) {
-	/*
-		Three cases:
-			1. We have a critical, eligible value to swap
-			2. We have no eligible values to swap due to lack of criticals
-			3. swapAssessment's caller shelf is an overflow shelf,
-				so there's no freed up space.
-		Blocked by: SelectCritical test
-	*/
 	msg := `
 Eligible Order in overflow
 critical map. SwapAssessment should
@@ -134,16 +134,16 @@ and available count increased by one.
 
 }
 
+/*
+	For reference, sese the fixtures in TestSwapWillPreserve
+	and read the comments there.
+
+	We're going to verify that the order itself
+	gets returned
+*/
 func TestSelectCritical(t *testing.T) {
-
 	t.Run("Eligible critical value, returns an order.", func(t *testing.T) {
-		/*
-			For reference, sese the fixtures in TestSwapWillPreserve
-			and read the comments there.
 
-			We're going to verify that the order itself
-			gets returned
-		*/
 		overflowShelf := buildOrderShelf(1, "overflow", 4)
 		hotShelf := buildOrderShelf(1, "hot", 1)
 		mockNow := mockTimeNow()

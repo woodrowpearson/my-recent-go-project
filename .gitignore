@@ -4,3 +4,5 @@ hello
 *.swp
 .idea/*
 .vscode/*
+logs/*
+TODO.md

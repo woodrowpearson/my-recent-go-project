@@ -5,26 +5,26 @@ import (
 	"time"
 )
 
+/*
+	Scenario:
+		Order has a shelf life of twelve seconds.
+		Courier will arrive in seven seconds.
+		one second has elapsed, with a decay rate of 1
+		and a modifier of four.
+		This means the current elapsed score is
+			(12 - (1 second)*4*1)/12 => 0.67
+		but the final score would be:
+			(12 - (7 seconds)*1*4)/12 => -1.33 (failing)
+		in two seconds, the order will decay out.
+		if it is swapped to a shelf with modifier of 1,
+		the final decay score would be:
+			(12 - (1 second)*4*1)/12 => 0.67 (elapsed) +
+			(12 - (6 seconds)*1)/12 => 0.5 (on new shelf)
+		for a total of 1.17, which will let the order survive.
+*/
 func TestSwapWillPreserve(t *testing.T) {
-
 	t.Run("Swapping will prevent at-risk order from decaying out.", func(t *testing.T) {
-		/*
-			Scenario:
-				Order has a shelf life of twelve seconds.
-				Courier will arrive in seven seconds.
-				one second has elapsed, with a decay rate of 1
-				and a modifier of four.
-				This means the current elapsed score is
-					(12 - (1 second)*4*1)/12 => 0.67
-				but the final score would be:
-					(12 - (7 seconds)*1*4)/12 => -1.33 (failing)
-				in two seconds, the order will decay out.
-				if it is swapped to a shelf with modifier of 1,
-				the final decay score would be:
-					(12 - (1 second)*4*1)/12 => 0.67 (elapsed) +
-					(12 - (6 seconds)*1)/12 => 0.5 (on new shelf)
-				for a total of 1.17, which will let the order survive.
-		*/
+
 		overflowShelf := buildOrderShelf(1, "overflow", 4)
 		hotShelf := buildOrderShelf(1, "hot", 1)
 		mockNow := mockTimeNow()
@@ -78,14 +78,13 @@ func TestSwapWillPreserve(t *testing.T) {
 	})
 }
 
+/*
+	Three cases:
+		1. zero shelf life
+		2. B greater than A
+		3. A greater than B
+*/
 func TestComputeDecayScore(t *testing.T) {
-	/*
-		Three cases:
-			1. zero shelf life
-			2. B greater than A
-			3. A greater than B
-	*/
-
 	order := foodOrder{Id: "a", Name: "dummy", Temp: "hot",
 		ShelfLife: 200, DecayRate: 0.25}
 
@@ -120,6 +119,7 @@ outweighs decay factors.
 	})
 }
 
+// Verify it selects correct shelf else full then dead.
 func TestSelectShelf(t *testing.T) {
 	order := foodOrder{Id: "a", Name: "dummy", Temp: "hot",
 		ShelfLife: 200, DecayRate: 0.25}
