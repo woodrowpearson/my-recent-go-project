@@ -65,18 +65,63 @@ func (s *Statistics) update(o *foodOrder, success bool, decayed bool) {
 
 func (s *Statistics) updateSwapped() { atomic.AddUint64(&s.totalSwapped, 1) }
 
-func (s *Statistics) GetHotDiscarded() uint64    { return s.hotDiscarded }
-func (s *Statistics) GetColdDiscarded() uint64   { return s.coldDiscarded }
-func (s *Statistics) GetFrozenDiscarded() uint64 { return s.frozenDiscarded }
-func (s *Statistics) GetHotDecayed() uint64      { return s.hotDecayed }
-func (s *Statistics) GetColdDecayed() uint64     { return s.coldDecayed }
-func (s *Statistics) GetFrozenDecayed() uint64   { return s.frozenDecayed }
-func (s *Statistics) GetHotSuccesses() uint64    { return s.hotSuccesses }
-func (s *Statistics) GetColdSuccesses() uint64   { return s.coldSuccesses }
-func (s *Statistics) GetFrozenSuccesses() uint64 { return s.frozenSuccesses }
-func (s *Statistics) GetTotalDiscarded() uint64  { return s.totalDiscarded }
-func (s *Statistics) GetTotalDecayed() uint64    { return s.totalDecayed }
-func (s *Statistics) GetTotalFailures() uint64   { return s.totalFailures }
-func (s *Statistics) GetTotalSuccesses() uint64  { return s.totalSuccesses }
-func (s *Statistics) GetTotalProcessed() uint64  { return s.totalProcessed }
-func (s *Statistics) GetTotalSwapped() uint64    { return s.totalSwapped }
+func (s *Statistics) GetHotDiscarded() uint64 {
+	hotDiscarded := atomic.LoadUint64(&s.hotDiscarded)
+	return hotDiscarded
+}
+func (s *Statistics) GetColdDiscarded() uint64 {
+	coldDiscarded := atomic.LoadUint64(&s.coldDiscarded)
+	return coldDiscarded
+}
+func (s *Statistics) GetFrozenDiscarded() uint64 {
+	frozenDecayed := atomic.LoadUint64(&s.frozenDecayed)
+	return frozenDecayed
+}
+func (s *Statistics) GetHotDecayed() uint64 {
+	hotDecayed := atomic.LoadUint64(&s.hotDecayed)
+	return hotDecayed
+}
+func (s *Statistics) GetColdDecayed() uint64 {
+	coldDecayed := atomic.LoadUint64(&s.coldDecayed)
+	return coldDecayed
+}
+func (s *Statistics) GetFrozenDecayed() uint64 {
+	frozenDecayed := atomic.LoadUint64(&s.frozenDecayed)
+	return frozenDecayed
+}
+func (s *Statistics) GetHotSuccesses() uint64 {
+	hotSuccesses := atomic.LoadUint64(&s.hotSuccesses)
+	return hotSuccesses
+}
+func (s *Statistics) GetColdSuccesses() uint64 {
+	coldSuccesses := atomic.LoadUint64(&s.coldSuccesses)
+	return coldSuccesses
+}
+func (s *Statistics) GetFrozenSuccesses() uint64 {
+	frozenSuccesses := atomic.LoadUint64(&s.frozenSuccesses)
+	return frozenSuccesses
+}
+func (s *Statistics) GetTotalDiscarded() uint64 {
+	totalDiscarded := atomic.LoadUint64(&s.totalDiscarded)
+	return totalDiscarded
+}
+func (s *Statistics) GetTotalDecayed() uint64 {
+	totalDecayed := atomic.LoadUint64(&s.totalDecayed)
+	return totalDecayed
+}
+func (s *Statistics) GetTotalFailures() uint64 {
+	totalFailures := atomic.LoadUint64(&s.totalFailures)
+	return totalFailures
+}
+func (s *Statistics) GetTotalSuccesses() uint64 {
+	totalSuccesses := atomic.LoadUint64(&s.totalSuccesses)
+	return totalSuccesses
+}
+func (s *Statistics) GetTotalProcessed() uint64 {
+	totalProcessed := atomic.LoadUint64(&s.totalProcessed)
+	return totalProcessed
+}
+func (s *Statistics) GetTotalSwapped() uint64 {
+	totalSwapped := atomic.LoadUint64(&s.totalSwapped)
+	return totalSwapped
+}
